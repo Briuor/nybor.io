@@ -2,8 +2,8 @@ import GameObject from "./GameObject.js";
 
 export default class Player extends GameObject {
   constructor(x, y, w, h) {
-    super(x, y, w, h, "black");
-    this.speed = 50
+    super(x, y, w, h, "white");
+    this.speed = 100
     this.direction = { right: false, left: false, up: false, down: false };
     document.addEventListener("keydown", (e) =>
       this.handleKeyBoardInput(e, true, this.direction)
@@ -27,10 +27,10 @@ export default class Player extends GameObject {
     if (this.direction.up) this.y += this.speed * dt;
   }
 
-  draw(ctx) {
+  draw(ctx, camera) {
     ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
+    ctx.arc(camera.width / 2, camera.height / 2, 10, 0, 2 * Math.PI);
     ctx.fill();
   }
 }
