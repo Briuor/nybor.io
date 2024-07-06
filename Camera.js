@@ -2,8 +2,8 @@ import Map from "./Map.js";
 
 export default class Camera {
   constructor() {
-    this.width = 10 * Map.TILE_SIZE;
-    this.height = 10 * Map.TILE_SIZE;
+    this.width = 20 * Map.TILE_SIZE;
+    this.height = 20 * Map.TILE_SIZE;
   }
 
   update(player) {
