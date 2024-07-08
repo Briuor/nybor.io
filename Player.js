@@ -1,17 +1,21 @@
 import GameObject from "./GameObject.js";
 
 export default class Player extends GameObject {
-  constructor(x, y, w, h, game) {
+  constructor(id, x, y, w, h, game) {
     super(x, y, w, h, "white");
+    this.id = id;
     this.speed = 50;
     this.directionAngle = 0;
     this.attack = {
-      duration: 300, // seg
+      duration: 300, // ms
       isAttacking: false,
       time: null,
     };
     this.game = game;
     this.radius = 10;
+    this.health = 100;
+    this.maxHealth = 100;
+    this.damage = 20; // Damage dealt per attack
 
     // Bind the this context for the event listener
     document.addEventListener("mousemove", this.handleMouseMove.bind(this));
@@ -19,8 +23,8 @@ export default class Player extends GameObject {
   }
 
   handleMouseMove(e) {
-    const x = e.clientX - this.game.canvas.getBoundingClientRect().left - this.game.camera.width/2
-    const y = e.clientY - this.game.canvas.getBoundingClientRect().top - this.game.camera.height/2
+    const x = e.clientX - this.game.canvas.getBoundingClientRect().left - this.game.camera.width / 2;
+    const y = e.clientY - this.game.canvas.getBoundingClientRect().top - this.game.camera.height / 2;
     this.directionAngle = Math.atan2(y, x);
   }
 
@@ -32,12 +36,15 @@ export default class Player extends GameObject {
 
     for (let i = 0; i < this.game.bots.length; i++) {
       let bot = this.game.bots[i];
-      const dist = Math.sqrt(
-        Math.pow(attackX - bot.x, 2) + Math.pow(attackY - bot.y, 2)
-      );
+      const dist = Math.sqrt(Math.pow(attackX - bot.x, 2) + Math.pow(attackY - bot.y, 2));
 
       if (dist <= 2 * bot.radius) {
-        this.game.bots = this.game.bots.filter(b => b.id !== bot.id)
+        bot.health -= this.damage;
+        if (bot.health <= 0) {
+          bot.health = 0;
+          // Handle bot death
+          this.game.bots = this.game.bots.filter((b) => b.id !== bot.id);
+        }
       }
     }
   }
@@ -59,7 +66,7 @@ export default class Player extends GameObject {
   }
 
   move(dt) {
-     const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
+    const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
     const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
 
     let willCollide = false;
@@ -85,17 +92,12 @@ export default class Player extends GameObject {
   }
 
   isColliding(nextX, nextY, entity) {
-    const distance = Math.sqrt(
-      Math.pow(nextX - entity.x, 2) + Math.pow(nextY - entity.y, 2)
-    );
+    const distance = Math.sqrt(Math.pow(nextX - entity.x, 2) + Math.pow(nextY - entity.y, 2));
     return distance < this.radius + entity.radius;
   }
 
   resolveCollision(entity) {
-    const overlap = this.radius + entity.radius - Math.sqrt(
-      Math.pow(this.x - entity.x, 2) + Math.pow(this.y - entity.y, 2)
-    );
-
+    const overlap = this.radius + entity.radius - Math.sqrt(Math.pow(this.x - entity.x, 2) + Math.pow(this.y - entity.y, 2));
     const angle = Math.atan2(entity.y - this.y, entity.x - this.x);
 
     this.x -= Math.cos(angle) * overlap / 2;
@@ -110,16 +112,23 @@ export default class Player extends GameObject {
     ctx.beginPath();
     ctx.arc(camera.width / 2, camera.height / 2, this.radius, 0, 2 * Math.PI);
     ctx.fill();
-    // attack area
+
+    // Draw attack area
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.arc(
-      camera.width / 2 + Math.cos(this.directionAngle) * 20,
-      camera.height / 2 + Math.sin(this.directionAngle) * 20,
+      camera.width / 2 + Math.cos(this.directionAngle) * 24,
+      camera.height / 2 + Math.sin(this.directionAngle) * 24,
       10,
       0,
       2 * Math.PI
     );
     ctx.fill();
+
+    // Draw health bar
+    ctx.fillStyle = "red";
+    ctx.fillRect(camera.width / 2 - 50, camera.height / 2 - 20, 100, 10);
+    ctx.fillStyle = "green";
+    ctx.fillRect(camera.width / 2 - 50, camera.height / 2 - 20, (this.health / this.maxHealth) * 100, 10);
   }
 }

@@ -12,6 +12,7 @@ export default class Game {
     this.map = new Map();
     this.camera = new Camera();
     this.player = new Player(
+      0,
       Map.TILE_SIZE * 5,
       Map.TILE_SIZE * 5,
       Map.TILE_SIZE,

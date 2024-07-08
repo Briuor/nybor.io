@@ -12,6 +12,9 @@ export default class Bot extends GameObject {
     this.directionAngle = 0;
     this.targetRadius = 100;
     this.target = null;
+    this.health = 50;
+    this.maxHealth = 50;
+    this.damage = 10; // Damage dealt per attack
     this.attack = {
       duration: 300, // ms
       isAttacking: false,
@@ -20,7 +23,6 @@ export default class Bot extends GameObject {
     };
     this.attackRadius = 30;
     this.nextDirectionPoint = { x: 10, y: 10 };
-    this.attackMoment = false
   }
 
   move(dt) {
@@ -32,7 +34,10 @@ export default class Bot extends GameObject {
       const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
       const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
 
-      if (!this.isColliding(nextX, nextY) && this.game.map.isWalkable(nextX, nextY)) {
+      if (
+        !this.isColliding(nextX, nextY) &&
+        this.game.map.isWalkable(nextX, nextY)
+      ) {
         this.x = nextX;
         this.y = nextY;
       }
@@ -44,7 +49,10 @@ export default class Bot extends GameObject {
       const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
       const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
 
-      if (!this.isColliding(nextX, nextY) && this.game.map.isWalkable(nextX, nextY)) {
+      if (
+        !this.isColliding(nextX, nextY) &&
+        this.game.map.isWalkable(nextX, nextY)
+      ) {
         this.x = nextX;
         this.y = nextY;
       }
@@ -102,38 +110,61 @@ export default class Bot extends GameObject {
   }
 
   attackAction() {
-    console.log("attack");
+    console.log(`${this.id} attacked ${this.target.id}`);
     this.attack.isAttacking = true;
     this.attack.time = Date.now();
 
     const attackX = this.x + Math.cos(this.directionAngle) * 20;
     const attackY = this.y + Math.sin(this.directionAngle) * 20;
-    const distToTarget = Math.sqrt(
-      Math.pow(attackX - this.target.x, 2) +
-        Math.pow(attackY - this.target.y, 2)
-    );
 
-    if (distToTarget <= 2*this.target.radius) {
-      if (this.target.id === this.game.player.id) {
-        console.log("game over");
-      } else {
-        console.log("killed");
-        this.game.bots = this.game.bots.filter(
-          (bot) => bot.id !== this.target.id
-        );
-        this.target = null;
+    const enemies = [
+      this.game.player,
+      ...this.game.bots.filter((bot) => bot.id !== this.id),
+    ];
+    for (let i = 0; i < enemies.length; i++) {
+      let enemy = enemies[i];
+      const dist = Math.sqrt(
+        Math.pow(attackX - enemy.x, 2) + Math.pow(attackY - enemy.y, 2)
+      );
+
+      if (dist <= 2 * enemy.radius) {
+        enemy.health -= this.damage;
+        if (enemy.health <= 0) {
+          enemy.health = 0;
+
+          // Handle death
+          if (enemy.id === this.game.player.id) {
+            console.log("game over");
+          } else {
+            this.game.bots = this.game.bots.filter(
+              (bot) => bot.id !== enemy.id
+            );
+          }
+        }
       }
     }
   }
 
   update(game, dt) {
-    if (!this.target) {
-      const target = this.findTargetToChase([
-        game.player,
-        ...game.bots.filter((bot) => bot.id !== this.id),
-      ]);
-      this.target = target ?? null;
-    } else if (!this.attack.isAttacking) {
+    const target = this.findTargetToChase([
+      game.player,
+      ...game.bots.filter((bot) => bot.id !== this.id),
+    ]);
+    this.target = target ?? null;
+
+    if (this.target) {
+      // check if target still exists and is still alive searching by game.bots
+      const target = [this.game.player, ...this.game.bots].find(
+        (bot) => bot.id === this.target.id
+      );
+      if (target) {
+        this.target = target;
+      } else {
+        this.target = null;
+      }
+    }
+
+    if (this.target && !this.attack.isAttacking) {
       const distToTarget = Math.sqrt(
         Math.pow(this.target.x - this.x, 2) +
           Math.pow(this.target.y - this.y, 2)
@@ -142,7 +173,7 @@ export default class Bot extends GameObject {
       if (distToTarget <= this.attackRadius) {
         if (this.attack.waitTime === null) {
           // Set a random delay before attacking
-          this.attack.waitTime = Date.now() + Math.random() * 500 + 100; // random delay between 500ms and 2500ms
+          this.attack.waitTime = Date.now() + Math.random() * 500 + 100; // random delay between 500ms and 600ms
         }
 
         if (Date.now() >= this.attack.waitTime) {
@@ -163,11 +194,31 @@ export default class Bot extends GameObject {
     }
   }
 
+  takeDamage(damage) {
+    this.health -= damage;
+    if (this.health <= 0) {
+      this.health = 0;
+      // Handle bot death
+      this.game.bots = this.game.bots.filter((bot) => bot.id !== this.id);
+    }
+  }
+
   draw(ctx, camera) {
     ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, 2 * Math.PI);
     ctx.fill();
+
+    // Draw health bar
+    ctx.fillStyle = "red";
+    ctx.fillRect(this.x - camera.x - 50, this.y - camera.y - 20, 100, 10);
+    ctx.fillStyle = "green";
+    ctx.fillRect(
+      this.x - camera.x - 50,
+      this.y - camera.y - 20,
+      (this.health / this.maxHealth) * 100,
+      10
+    );
 
     // Target Area
     ctx.beginPath();
@@ -179,6 +230,7 @@ export default class Bot extends GameObject {
       2 * Math.PI
     );
     ctx.stroke();
+
     // Attack Area
     ctx.beginPath();
     ctx.arc(
@@ -189,16 +241,5 @@ export default class Bot extends GameObject {
       2 * Math.PI
     );
     ctx.stroke();
-    // attack circle
-    // ctx.fillStyle = this.attack.isAttacking ? "pink" : "black";
-    // ctx.beginPath();
-    // ctx.arc(
-    //   this.x - camera.x + Math.cos(this.directionAngle) * 20,
-    //   this.y - camera.y + Math.sin(this.directionAngle) * 20,
-    //   10,
-    //   0,
-    //   2 * Math.PI
-    // );
-    // ctx.fill();
   }
 }
