@@ -6,17 +6,13 @@ import Bot from "./Bot.js";
 export default class Game {
   constructor() {
     this.canvas = document.getElementById("canvas");
-    this.canvas.width = 20 * Map.TILE_SIZE;
-    this.canvas.height = 20 * Map.TILE_SIZE;
     this.ctx = this.canvas.getContext("2d");
     this.map = new Map();
-    this.camera = new Camera();
+    this.camera = new Camera(this.canvas);
     this.player = new Player(
       0,
+      Map.TILE_SIZE * 2,
       Map.TILE_SIZE * 5,
-      Map.TILE_SIZE * 5,
-      Map.TILE_SIZE,
-      Map.TILE_SIZE,
       this
     );
     this.bots = [
@@ -24,20 +20,24 @@ export default class Game {
         1,
         Map.TILE_SIZE * 10,
         Map.TILE_SIZE * 5,
-        Map.TILE_SIZE,
-        Map.TILE_SIZE,
         this
       ),
       new Bot(
         2,
         Map.TILE_SIZE * 12,
         Map.TILE_SIZE * 5,
-        Map.TILE_SIZE,
-        Map.TILE_SIZE,
         this
       ),
     ];
     this.lastSpawn = Date.now();
+
+    window.addEventListener("resize", this.resizeCanvas.bind(this));
+    this.resizeCanvas();
+  }
+
+  resizeCanvas() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
   }
 
   render() {
@@ -62,8 +62,6 @@ export default class Game {
           Math.floor(Math.random() * 999) + 1,
           Math.random() * this.map.getMapMaxWidth,
           Math.random() * this.map.getMapMaxHeight,
-          Map.TILE_SIZE,
-          Map.TILE_SIZE,
           this
         )
       );

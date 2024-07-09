@@ -1,9 +1,15 @@
 import Map from "./Map.js";
 
 export default class Camera {
-  constructor() {
-    this.width = 20 * Map.TILE_SIZE;
-    this.height = 20 * Map.TILE_SIZE;
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.updateDimensions();
+    window.addEventListener("resize", this.updateDimensions.bind(this));
+  }
+
+  updateDimensions() {
+    this.width = window.innerWidth + 32;
+    this.height = window.innerHeight + 32;
   }
 
   update(player) {

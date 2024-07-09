@@ -1,16 +1,15 @@
 import GameObject from "./GameObject.js";
 
 export default class Bot extends GameObject {
-  constructor(id, x, y, w, h, game) {
-    super(x, y, w, h, "red");
+  constructor(id, x, y, game) {
+    super(x, y, 32, "red");
     this.id = id;
     this.speed = 50;
-    this.radius = 10;
     this.game = game;
     this.x = x;
     this.y = y;
     this.directionAngle = 0;
-    this.targetRadius = 100;
+    this.targetRadius = 180;
     this.target = null;
     this.health = 50;
     this.maxHealth = 50;
@@ -21,7 +20,8 @@ export default class Bot extends GameObject {
       time: null,
       waitTime: null,
     };
-    this.attackRadius = 30;
+    this.attackRadius = 90;
+    this.attackRange = 40;
     this.nextDirectionPoint = { x: 10, y: 10 };
   }
 
@@ -114,8 +114,8 @@ export default class Bot extends GameObject {
     this.attack.isAttacking = true;
     this.attack.time = Date.now();
 
-    const attackX = this.x + Math.cos(this.directionAngle) * 20;
-    const attackY = this.y + Math.sin(this.directionAngle) * 20;
+    const attackX = this.x + Math.cos(this.directionAngle) * this.attackRange;
+    const attackY = this.y + Math.sin(this.directionAngle) * this.attackRange;
 
     const enemies = [
       this.game.player,
@@ -230,6 +230,7 @@ export default class Bot extends GameObject {
       2 * Math.PI
     );
     ctx.stroke();
+    
 
     // Attack Area
     ctx.beginPath();
@@ -241,5 +242,17 @@ export default class Bot extends GameObject {
       2 * Math.PI
     );
     ctx.stroke();
+
+    // attack field
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(
+      this.x- camera.x + Math.cos(this.directionAngle) * this.attackRange,
+      this.y- camera.y + Math.sin(this.directionAngle) * this.attackRange,
+      32,
+      0,
+      2 * Math.PI
+    );
+    ctx.fill();
   }
 }

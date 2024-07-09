@@ -1,14 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-</head>
-<body>
+    <style>
+        html {
+            height: 100%
+        }
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%
+      }
+      #game {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        width: 100%;
+      }
+
+      #canvas {
+        display: block;
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
     <script type="module" src="./GameObject.js"></script>
     <script type="module" src="./Game.js"></script>
     <script type="module" src="./index.js"></script>
-    <canvas id="canvas" style="background: black;"></canvas>
-</body>
+    <div id="game" >
+      <canvas id="canvas" style="background: black"></canvas>
+    </div>
+  </body>
 </html>

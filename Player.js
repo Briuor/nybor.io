@@ -1,8 +1,8 @@
 import GameObject from "./GameObject.js";
 
 export default class Player extends GameObject {
-  constructor(id, x, y, w, h, game) {
-    super(x, y, w, h, "white");
+  constructor(id, x, y, game) {
+    super(x, y, 32, "white");
     this.id = id;
     this.speed = 50;
     this.directionAngle = 0;
@@ -12,10 +12,10 @@ export default class Player extends GameObject {
       time: null,
     };
     this.game = game;
-    this.radius = 10;
     this.health = 100;
     this.maxHealth = 100;
     this.damage = 20; // Damage dealt per attack
+    this.attackRange = 40;
 
     // Bind the this context for the event listener
     document.addEventListener("mousemove", this.handleMouseMove.bind(this));
@@ -31,8 +31,8 @@ export default class Player extends GameObject {
   attackAction() {
     this.attack.isAttacking = true;
     this.attack.time = Date.now();
-    const attackX = this.x + Math.cos(this.directionAngle) * 20;
-    const attackY = this.y + Math.sin(this.directionAngle) * 20;
+    const attackX = this.x + Math.cos(this.directionAngle) * this.attackRange;
+    const attackY = this.y + Math.sin(this.directionAngle) * this.attackRange;
 
     for (let i = 0; i < this.game.bots.length; i++) {
       let bot = this.game.bots[i];
@@ -117,9 +117,9 @@ export default class Player extends GameObject {
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.arc(
-      camera.width / 2 + Math.cos(this.directionAngle) * 24,
-      camera.height / 2 + Math.sin(this.directionAngle) * 24,
-      10,
+      camera.width / 2 + Math.cos(this.directionAngle) * this.attackRange,
+      camera.height / 2 + Math.sin(this.directionAngle) * this.attackRange,
+      32,
       0,
       2 * Math.PI
     );
