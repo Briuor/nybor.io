@@ -4,7 +4,7 @@ export default class Bot extends GameObject {
   constructor(id, x, y, game) {
     super(x, y, 32, "red");
     this.id = id;
-    this.speed = 50;
+    this.speed = 80;
     this.game = game;
     this.x = x;
     this.y = y;
@@ -23,6 +23,7 @@ export default class Bot extends GameObject {
     this.attackRadius = 90;
     this.attackRange = 40;
     this.nextDirectionPoint = { x: 10, y: 10 };
+    this.impulse = { x: 0, y: 0, duration: 0 };
   }
 
   move(dt) {
@@ -34,10 +35,7 @@ export default class Bot extends GameObject {
       const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
       const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
 
-      if (
-        !this.isColliding(nextX, nextY) &&
-        this.game.map.isWalkable(nextX, nextY)
-      ) {
+      if (this.game.map.isWalkable(nextX, nextY)) {
         this.x = nextX;
         this.y = nextY;
       }
@@ -49,10 +47,7 @@ export default class Bot extends GameObject {
       const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
       const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
 
-      if (
-        !this.isColliding(nextX, nextY) &&
-        this.game.map.isWalkable(nextX, nextY)
-      ) {
+      if (this.game.map.isWalkable(nextX, nextY)) {
         this.x = nextX;
         this.y = nextY;
       }
@@ -69,31 +64,6 @@ export default class Bot extends GameObject {
           Math.random() * this.game.map.getMapMaxHeight;
       }
     }
-  }
-
-  isColliding(nextX, nextY) {
-    // Check for collisions with the player
-    const player = this.game.player;
-    const distToPlayer = Math.sqrt(
-      Math.pow(nextX - player.x, 2) + Math.pow(nextY - player.y, 2)
-    );
-    if (distToPlayer < this.radius + player.radius) {
-      return true;
-    }
-
-    // Check for collisions with other bots
-    for (let bot of this.game.bots) {
-      if (bot.id !== this.id) {
-        const distToBot = Math.sqrt(
-          Math.pow(nextX - bot.x, 2) + Math.pow(nextY - bot.y, 2)
-        );
-        if (distToBot < this.radius + bot.radius) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 
   findTargetToChase(enemies) {
@@ -141,11 +111,36 @@ export default class Bot extends GameObject {
             );
           }
         }
+
+        // Apply impulse
+        const impulseStrength = 100; // Adjust this value as needed
+        const impulseDuration = 0.5; // Duration in seconds
+        const angle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
+        enemy.impulse.x = Math.cos(angle) * impulseStrength;
+        enemy.impulse.y = Math.sin(angle) * impulseStrength;
+        enemy.impulse.duration = impulseDuration;
       }
     }
   }
 
   update(game, dt) {
+    if (this.impulse.duration > 0) {
+      const impulseX = this.impulse.x * dt;
+      const impulseY = this.impulse.y * dt;
+      let nextX = this.x + impulseX;
+      let nextY = this.y + impulseY;
+
+      // Check for collisions with the map
+      if (!this.game.map.isWalkable(nextX, nextY)) {
+        nextX = this.x;
+        nextY = this.y;
+      }
+
+      this.x = nextX;
+      this.y = nextY;
+      this.impulse.duration -= dt;
+    }
+
     const target = this.findTargetToChase([
       game.player,
       ...game.bots.filter((bot) => bot.id !== this.id),
@@ -194,15 +189,6 @@ export default class Bot extends GameObject {
     }
   }
 
-  takeDamage(damage) {
-    this.health -= damage;
-    if (this.health <= 0) {
-      this.health = 0;
-      // Handle bot death
-      this.game.bots = this.game.bots.filter((bot) => bot.id !== this.id);
-    }
-  }
-
   draw(ctx, camera) {
     ctx.fillStyle = this.color;
     ctx.beginPath();
@@ -230,7 +216,6 @@ export default class Bot extends GameObject {
       2 * Math.PI
     );
     ctx.stroke();
-    
 
     // Attack Area
     ctx.beginPath();
@@ -247,8 +232,8 @@ export default class Bot extends GameObject {
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.arc(
-      this.x- camera.x + Math.cos(this.directionAngle) * this.attackRange,
-      this.y- camera.y + Math.sin(this.directionAngle) * this.attackRange,
+      this.x - camera.x + Math.cos(this.directionAngle) * this.attackRange,
+      this.y - camera.y + Math.sin(this.directionAngle) * this.attackRange,
       32,
       0,
       2 * Math.PI
