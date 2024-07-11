@@ -4,36 +4,82 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <style>
-        html {
-            height: 100%
-        }
-      body {
-        margin: 0;
-        padding: 0;
-        height: 100%
-      }
-      #game {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-      }
-
-      #canvas {
-        display: block;
-        image-rendering: pixelated;
-      }
-    </style>
+    <link rel="stylesheet" href="./index.css" />
   </head>
   <body>
     <script type="module" src="./GameObject.js"></script>
     <script type="module" src="./Game.js"></script>
     <script type="module" src="./index.js"></script>
-    <div id="game" >
+
+    <div id="game">
       <canvas id="canvas" style="background: black"></canvas>
+      <div id="level"></div>
+      <div id="expBarContainer">
+        <div id="expBar"></div>
+      </div>
+      <div id="leaderboard-wrapper">
+        Leaderboard
+        <ul id="leaderboard">
+          <li>
+            <span class="leaderboard-name">1.-</span
+            ><span class="leaderboard-score">-</span>
+          </li>
+          <li>
+            <span class="leaderboard-name">2.-</span
+            ><span class="leaderboard-score">-</span>
+          </li>
+          <li>
+            <span class="leaderboard-name">3.-</span
+            ><span class="leaderboard-score">-</span>
+          </li>
+          <li>
+            <span class="leaderboard-name">4.-</span
+            ><span class="leaderboard-score">-</span>
+          </li>
+          <li>
+            <span class="leaderboard-name">5.-</span
+            ><span class="leaderboard-score">-</span>
+          </li>
+          <li>
+            <span class="leaderboard-name">?.-</span
+            ><span class="leaderboard-score">-</span>
+          </li>
+        </ul>
+      </div>
     </div>
+
+    <div id="menu">
+      <div class="game-name center">
+        <img src="/images/gamename.png" />
+      </div>
+      <!-- PLAY -->
+      <form id="play-form">
+        <label for="name-play">Ghost Name</label>
+        <input
+          name="name"
+          class="name"
+          id="name-play"
+          type="text"
+          pattern="[A-Za-z].{0,7}"
+          title="a-z and less than 8 characters."
+          placeholder="Unammed"
+        />
+        <div class="play-btn">
+          <button id="play" type="button">Play</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="play-again-modal">
+      <div class="center">
+          <img src="/images/gamename.png" />
+      </div>
+      <form id="play-again-form">
+          <p id="kills"></p>
+          <div class="play-btn">
+              <button id="play-again" type="submit">Play Again</button>
+          </div>
+      </form>
+  </div>
   </body>
 </html>

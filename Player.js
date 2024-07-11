@@ -1,8 +1,10 @@
 import GameObject from "./GameObject.js";
+import pixelCanvas from "./pixelCanvas.js";
 
 export default class Player extends GameObject {
-  constructor(id, x, y, game) {
+  constructor(id, name, x, y, game) {
     super(x, y, 32, "white");
+    this.name = name;
     this.id = id;
     this.speed = 80;
     this.directionAngle = 0;
@@ -12,11 +14,16 @@ export default class Player extends GameObject {
       time: null,
     };
     this.game = game;
-    this.health = 100;
-    this.maxHealth = 100;
+    this.health = 50;
+    this.maxHealth = 50;
     this.damage = 20; // Damage dealt per attack
     this.attackRange = 40;
     this.impulse = { x: 0, y: 0, duration: 0 };
+    this.level = 1;
+    this.exp = 0;
+    this.expToNextLevel = 50;
+    this.pixelCanvas = new pixelCanvas();
+    this.kills = 0;
 
     // Bind the this context for the event listener
     document.addEventListener("mousemove", this.handleMouseMove.bind(this));
@@ -51,8 +58,10 @@ export default class Player extends GameObject {
         bot.health -= this.damage;
         if (bot.health <= 0) {
           bot.health = 0;
+          this.kills += 1;
           // Handle bot death
           this.game.bots = this.game.bots.filter((b) => b.id !== bot.id);
+          this.game.updateLeaderBoard();
         }
         // Apply impulse
         const impulseStrength = 100; // Adjust this value as needed
@@ -89,6 +98,25 @@ export default class Player extends GameObject {
       this.impulse.duration -= dt;
     }
 
+    for (let i = 0; i < this.game.orbs.length; i++) {
+      let orb = this.game.orbs[i];
+      if (
+        Math.abs(this.x - orb.x) < this.radius &&
+        Math.abs(this.y - orb.y) < this.radius
+      ) {
+        this.exp += orb.exp;
+
+        if (this.exp >= this.expToNextLevel) {
+          this.exp = 0;
+          this.level++;
+          this.maxHealth += 10;
+          this.health = this.maxHealth;
+        }
+        
+        this.game.orbs = this.game.orbs.filter((o) => o !== orb);
+      }
+    }
+
     if (this.attack.isAttacking) {
       if (Date.now() >= this.attack.time + this.attack.duration) {
         this.attack.isAttacking = false;
@@ -116,29 +144,6 @@ export default class Player extends GameObject {
     }
   }
 
-  isColliding(nextX, nextY, entity) {
-    const distance = Math.sqrt(
-      Math.pow(nextX - entity.x, 2) + Math.pow(nextY - entity.y, 2)
-    );
-    return distance < this.radius + entity.radius;
-  }
-
-  resolveCollision(entity) {
-    const overlap =
-      this.radius +
-      entity.radius -
-      Math.sqrt(
-        Math.pow(this.x - entity.x, 2) + Math.pow(this.y - entity.y, 2)
-      );
-    const angle = Math.atan2(entity.y - this.y, entity.x - this.x);
-
-    this.x -= (Math.cos(angle) * overlap) / 2;
-    this.y -= (Math.sin(angle) * overlap) / 2;
-
-    entity.x += (Math.cos(angle) * overlap) / 2;
-    entity.y += (Math.sin(angle) * overlap) / 2;
-  }
-
   draw(ctx, camera) {
     ctx.fillStyle = this.color;
     ctx.beginPath();
@@ -159,13 +164,14 @@ export default class Player extends GameObject {
 
     // Draw health bar
     ctx.fillStyle = "red";
-    ctx.fillRect(camera.width / 2 - 50, camera.height / 2 - 20, 100, 10);
+    ctx.fillRect(camera.width / 2 - 50, camera.height / 2 + 55, 100, 10);
     ctx.fillStyle = "green";
     ctx.fillRect(
       camera.width / 2 - 50,
-      camera.height / 2 - 20,
+      camera.height / 2 + 55,
       (this.health / this.maxHealth) * 100,
       10
     );
+    this.pixelCanvas.drawName(ctx, this.name, 1.5, Math.floor(camera.width/2 - (this.name.length * 2)) -5, Math.floor(camera.height/2) +40 );
   }
 }

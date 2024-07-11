@@ -1,9 +1,11 @@
 import GameObject from "./GameObject.js";
+import pixelCanvas from "./pixelCanvas.js";
 
 export default class Bot extends GameObject {
-  constructor(id, x, y, game) {
+  constructor(id, name, x, y, game) {
     super(x, y, 32, "red");
     this.id = id;
+    this.name = name;
     this.speed = 80;
     this.game = game;
     this.x = x;
@@ -13,7 +15,7 @@ export default class Bot extends GameObject {
     this.target = null;
     this.health = 50;
     this.maxHealth = 50;
-    this.damage = 10; // Damage dealt per attack
+    this.damage = 20; // Damage dealt per attack
     this.attack = {
       duration: 300, // ms
       isAttacking: false,
@@ -24,6 +26,11 @@ export default class Bot extends GameObject {
     this.attackRange = 40;
     this.nextDirectionPoint = { x: 10, y: 10 };
     this.impulse = { x: 0, y: 0, duration: 0 };
+    this.pixelCanvas = new pixelCanvas();
+    this.kills = 0;
+    this.exp = 0;
+    this.expToNextLevel = 50;
+    this.level = 1;
   }
 
   move(dt) {
@@ -101,15 +108,20 @@ export default class Bot extends GameObject {
         enemy.health -= this.damage;
         if (enemy.health <= 0) {
           enemy.health = 0;
+          this.kills += 1;
+          
 
           // Handle death
           if (enemy.id === this.game.player.id) {
-            console.log("game over");
+            this.game.player = null;
+            this.game.playAgainModal.style.display = "block";
           } else {
             this.game.bots = this.game.bots.filter(
               (bot) => bot.id !== enemy.id
             );
           }
+
+          this.game.updateLeaderBoard();
         }
 
         // Apply impulse
@@ -139,6 +151,25 @@ export default class Bot extends GameObject {
       this.x = nextX;
       this.y = nextY;
       this.impulse.duration -= dt;
+    }
+
+    for (let i = 0; i < this.game.orbs.length; i++) {
+      let orb = this.game.orbs[i];
+      if (
+        Math.abs(this.x - orb.x) < this.radius &&
+        Math.abs(this.y - orb.y) < this.radius
+      ) {
+        this.exp += orb.exp;
+
+        if (this.exp >= this.expToNextLevel) {
+          this.exp = 0;
+          this.level++;
+          this.maxHealth += 10;
+          this.health = this.maxHealth;
+        }
+        
+        this.game.orbs = this.game.orbs.filter((o) => o !== orb);
+      }
     }
 
     const target = this.findTargetToChase([
@@ -197,11 +228,11 @@ export default class Bot extends GameObject {
 
     // Draw health bar
     ctx.fillStyle = "red";
-    ctx.fillRect(this.x - camera.x - 50, this.y - camera.y - 20, 100, 10);
+    ctx.fillRect(this.x - camera.x - 50, this.y - camera.y + 55, 100, 10);
     ctx.fillStyle = "green";
     ctx.fillRect(
       this.x - camera.x - 50,
-      this.y - camera.y - 20,
+      this.y - camera.y + 55,
       (this.health / this.maxHealth) * 100,
       10
     );
@@ -239,5 +270,7 @@ export default class Bot extends GameObject {
       2 * Math.PI
     );
     ctx.fill();
+
+    this.pixelCanvas.drawName(ctx, this.name, 1.5, Math.floor(this.x - camera.x -5 - (this.name.length * 2)), this.y - camera.y + 40);
   }
 }
