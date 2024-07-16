@@ -1,4 +1,5 @@
 import GameObject from "./GameObject.js";
+import Map from "./Map.js";
 import pixelCanvas from "./pixelCanvas.js";
 
 export default class Bot extends GameObject {
@@ -6,7 +7,7 @@ export default class Bot extends GameObject {
     super(x, y, 32, "red");
     this.id = id;
     this.name = name;
-    this.speed = 80;
+    this.speed = 120;
     this.game = game;
     this.x = x;
     this.y = y;
@@ -21,16 +22,25 @@ export default class Bot extends GameObject {
       isAttacking: false,
       time: null,
       waitTime: null,
+      animation: false,
+      angle: 0
     };
     this.attackRadius = 90;
     this.attackRange = 40;
-    this.nextDirectionPoint = { x: 10, y: 10 };
+    this.nextDirectionPoint = { x: Map.TILE_SIZE, y: Map.TILE_SIZE };
     this.impulse = { x: 0, y: 0, duration: 0 };
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
     this.exp = 0;
     this.expToNextLevel = 50;
     this.level = 1;
+
+    this.botImage = game.loader.getImage("ghost");
+    this.swordImage = game.loader.getImage("sword");
+    this.attackImage = game.loader.getImage("attack");
+    this.currentFrame = 0;
+    this.animationTime = Date.now();
+    this.animationDuration = 100;
   }
 
   move(dt) {
@@ -87,9 +97,11 @@ export default class Bot extends GameObject {
   }
 
   attackAction() {
-    console.log(`${this.id} attacked ${this.target.id}`);
     this.attack.isAttacking = true;
+    this.attack.animation = true;
+    this.currentFrame = 0;
     this.attack.time = Date.now();
+    this.attack.angle = this.directionAngle;
 
     const attackX = this.x + Math.cos(this.directionAngle) * this.attackRange;
     const attackY = this.y + Math.sin(this.directionAngle) * this.attackRange;
@@ -113,8 +125,8 @@ export default class Bot extends GameObject {
 
           // Handle death
           if (enemy.id === this.game.player.id) {
-            this.game.player = null;
-            this.game.playAgainModal.style.display = "block";
+            // this.game.player = null;
+            // this.game.playAgainModal.style.display = "block";
           } else {
             this.game.bots = this.game.bots.filter(
               (bot) => bot.id !== enemy.id
@@ -125,7 +137,7 @@ export default class Bot extends GameObject {
         }
 
         // Apply impulse
-        const impulseStrength = 100; // Adjust this value as needed
+        const impulseStrength = 200; // Adjust this value as needed
         const impulseDuration = 0.5; // Duration in seconds
         const angle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
         enemy.impulse.x = Math.cos(angle) * impulseStrength;
@@ -215,16 +227,100 @@ export default class Bot extends GameObject {
       if (Date.now() >= this.attack.time + this.attack.duration) {
         this.attack.isAttacking = false;
       }
-    } else {
-      this.move(dt);
     }
+    this.move(dt);
+    
   }
 
   draw(ctx, camera) {
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, 2 * Math.PI);
-    ctx.fill();
+    // ctx.fillStyle = this.color;
+    // ctx.beginPath();
+    // ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, 2 * Math.PI);
+    // ctx.fill();
+
+    // attack field
+    // ctx.fillStyle = "black";
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.x - camera.x + Math.cos(this.directionAngle) * this.attackRange,
+    //   this.y - camera.y + Math.sin(this.directionAngle) * this.attackRange,
+    //   32,
+    //   0,
+    //   2 * Math.PI
+    // );
+    // ctx.fill();
+
+    let col;
+    let angle = (180 * this.directionAngle) / Math.PI;
+    if (angle < 0) angle = 360 + angle;
+
+    if (angle >= 90 && angle < 270) {
+      col = this.attack.animation ? 2 : 0;
+    } else {
+      col = this.attack.animation ? 3 : 1;
+    }
+
+    let totalFrames = this.attack.animation ? 3 : 4;
+
+    if (Date.now() - this.animationDuration >= this.animationTime) {
+      this.currentFrame =
+        this.currentFrame >= totalFrames ? 0 : this.currentFrame + 1;
+      this.animationTime = Date.now();
+    }
+    if (this.attack.animation && this.currentFrame == totalFrames && totalFrames == 3) {
+      this.attack.animation = false;
+    }
+
+    // draw sword
+    if (!this.attack.animation) {
+      ctx.drawImage(
+        this.swordImage,
+        this.currentFrame * 35,
+        col*38,
+        35,
+        38,
+        this.x -camera.x +( col == 0 ? -5 : -80),
+        this.y -camera.y - 80,
+        35*2.5,
+        38*2.5
+      );
+    }
+
+    ctx.drawImage(
+      this.botImage,
+      this.currentFrame * 28,
+      col * 26,
+      28,
+      26,
+      this.x -camera.x - 28,
+      this.y -camera.y - 26,
+      28*2,
+      26*2
+    );
+    ctx.restore();
+
+    if (this.attack.animation) {
+      ctx.save();
+
+      ctx.translate(this.x -camera.x, this.y -camera.y);
+
+      // Rotate the canvas to the direction angle (convert to radians)
+      ctx.rotate(this.attack.angle + 3.14);
+      console.log(this.attack.angle);
+      ctx.drawImage(
+        this.attackImage,
+        this.currentFrame * 51,
+        0,
+        51,
+        54,
+        -51*3 / 2, // offset by half image width
+        -54*3 / 2, // offset by half image height
+        51*3,
+        54*3
+      );
+      ctx.restore();
+    }
+
 
     // Draw health bar
     ctx.fillStyle = "red";
@@ -259,17 +355,7 @@ export default class Bot extends GameObject {
     );
     ctx.stroke();
 
-    // attack field
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(
-      this.x - camera.x + Math.cos(this.directionAngle) * this.attackRange,
-      this.y - camera.y + Math.sin(this.directionAngle) * this.attackRange,
-      32,
-      0,
-      2 * Math.PI
-    );
-    ctx.fill();
+    
 
     this.pixelCanvas.drawName(ctx, this.name, 1.5, Math.floor(this.x - camera.x -5 - (this.name.length * 2)), this.y - camera.y + 40);
   }

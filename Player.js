@@ -6,12 +6,13 @@ export default class Player extends GameObject {
     super(x, y, 32, "white");
     this.name = name;
     this.id = id;
-    this.speed = 80;
+    this.speed = 200;
     this.directionAngle = 0;
     this.attack = {
       duration: 300, // ms
       isAttacking: false,
       time: null,
+      angle: 0,
     };
     this.game = game;
     this.health = 50;
@@ -24,6 +25,13 @@ export default class Player extends GameObject {
     this.expToNextLevel = 50;
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
+
+    this.playerImage = null;
+    this.swordImage = null;
+    this.attackImage = null;
+    this.currentFrame = 0;
+    this.animationTime = Date.now();
+    this.animationDuration = 100;
 
     // Bind the this context for the event listener
     document.addEventListener("mousemove", this.handleMouseMove.bind(this));
@@ -44,7 +52,10 @@ export default class Player extends GameObject {
 
   attackAction() {
     this.attack.isAttacking = true;
+    this.attack.animation = true;
+    this.currentFrame = 0;
     this.attack.time = Date.now();
+    this.attack.angle = this.directionAngle;
     const attackX = this.x + Math.cos(this.directionAngle) * this.attackRange;
     const attackY = this.y + Math.sin(this.directionAngle) * this.attackRange;
 
@@ -100,10 +111,10 @@ export default class Player extends GameObject {
 
     for (let i = 0; i < this.game.orbs.length; i++) {
       let orb = this.game.orbs[i];
-      if (
-        Math.abs(this.x - orb.x) < this.radius &&
-        Math.abs(this.y - orb.y) < this.radius
-      ) {
+      const dist = Math.sqrt(
+        Math.pow(this.x - orb.x, 2) + Math.pow(this.y - orb.y, 2)
+      );
+      if (dist < (this.radius + orb.radius)) {
         this.exp += orb.exp;
 
         if (this.exp >= this.expToNextLevel) {
@@ -112,8 +123,8 @@ export default class Player extends GameObject {
           this.maxHealth += 10;
           this.health = this.maxHealth;
         }
-        
-        this.game.orbs = this.game.orbs.filter((o) => o !== orb);
+
+        this.game.orbs = this.game.orbs.filter((o) => o.id !== orb.id);
       }
     }
 
@@ -121,9 +132,8 @@ export default class Player extends GameObject {
       if (Date.now() >= this.attack.time + this.attack.duration) {
         this.attack.isAttacking = false;
       }
-    } else {
-      this.move(dt);
     }
+    this.move(dt);
   }
 
   move(dt) {
@@ -150,7 +160,6 @@ export default class Player extends GameObject {
     ctx.arc(camera.width / 2, camera.height / 2, this.radius, 0, 2 * Math.PI);
     ctx.fill();
 
-    // Draw attack area
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.arc(
@@ -162,6 +171,81 @@ export default class Player extends GameObject {
     );
     ctx.fill();
 
+    let col;
+    let angle = (180 * this.directionAngle) / Math.PI;
+    if (angle < 0) angle = 360 + angle;
+
+    if (angle >= 90 && angle < 270) {
+      col = this.attack.animation ? 2 : 0;
+    } else {
+      col = this.attack.animation ? 3 : 1;
+    }
+
+    let totalFrames = this.attack.animation ? 3 : 4;
+
+    if (Date.now() - this.animationDuration >= this.animationTime) {
+      this.currentFrame =
+        this.currentFrame >= totalFrames ? 0 : this.currentFrame + 1;
+      this.animationTime = Date.now();
+    }
+    if (
+      this.attack.animation &&
+      this.currentFrame == totalFrames &&
+      totalFrames == 3
+    ) {
+      this.attack.animation = false;
+    }
+
+    // draw sword
+    if (!this.attack.animation) {
+      ctx.drawImage(
+        this.swordImage,
+        this.currentFrame * 35,
+        col * 38,
+        35,
+        38,
+        camera.width / 2 + (col == 0 ? -5 : -80),
+        camera.height / 2 - 80,
+        35 * 2.5,
+        38 * 2.5
+      );
+    }
+
+    ctx.drawImage(
+      this.playerImage,
+      this.currentFrame * 28,
+      col * 26,
+      28,
+      26,
+      camera.width / 2 - 28,
+      camera.height / 2 - 26,
+      28 * 2,
+      26 * 2
+    );
+    ctx.restore();
+
+    if (this.attack.animation) {
+      ctx.save();
+
+      ctx.translate(camera.width / 2, camera.height / 2);
+
+      // Rotate the canvas to the direction angle (convert to radians)
+      ctx.rotate(this.attack.angle + 3.14);
+      console.log(this.attack.angle);
+      ctx.drawImage(
+        this.attackImage,
+        this.currentFrame * 51,
+        0,
+        51,
+        54,
+        (-51 * 3) / 2, // offset by half image width
+        (-54 * 3) / 2, // offset by half image height
+        51 * 3,
+        54 * 3
+      );
+      ctx.restore();
+    }
+
     // Draw health bar
     ctx.fillStyle = "red";
     ctx.fillRect(camera.width / 2 - 50, camera.height / 2 + 55, 100, 10);
@@ -172,6 +256,12 @@ export default class Player extends GameObject {
       (this.health / this.maxHealth) * 100,
       10
     );
-    this.pixelCanvas.drawName(ctx, this.name, 1.5, Math.floor(camera.width/2 - (this.name.length * 2)) -5, Math.floor(camera.height/2) +40 );
+    this.pixelCanvas.drawName(
+      ctx,
+      this.name,
+      1.5,
+      Math.floor(camera.width / 2 - this.name.length * 2) - 5,
+      Math.floor(camera.height / 2) + 40
+    );
   }
 }

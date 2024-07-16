@@ -6,22 +6,30 @@ import Orb from "./Orb.js";
 import { randomName } from "./util.js";
 
 export default class Game {
-  constructor() {
+  constructor(loader) {
+    this.loader = loader;
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
     this.map = new Map();
-    this.orbs = [];
+    this.orbs = [
+      new Orb(
+        Math.floor(Math.random() * 999) + 1,
+        Map.TILE_SIZE * 10,
+        Map.TILE_SIZE * 13,
+        40
+      ),
+    ];
     this.camera = new Camera(this.canvas);
     this.player = new Player(
       0,
       "Bruno",
-      Map.TILE_SIZE * 2,
-      Map.TILE_SIZE * 5,
+      Map.TILE_SIZE * 10,
+      Map.TILE_SIZE * 10,
       this
     );
     this.bots = [
-      new Bot(1, randomName(), Map.TILE_SIZE * 10, Map.TILE_SIZE * 5, this),
-      new Bot(2, randomName(), Map.TILE_SIZE * 12, Map.TILE_SIZE * 5, this),
+      new Bot(1, randomName(), Map.TILE_SIZE * 10, Map.TILE_SIZE * 10, this),
+      new Bot(2, randomName(), Map.TILE_SIZE * 10, Map.TILE_SIZE * 10, this),
     ];
     this.lastSpawn = Date.now();
     this.lastSpawnOrbs = Date.now();
@@ -50,11 +58,11 @@ export default class Game {
       bot.draw(this.ctx, this.camera);
     });
 
-    const level = document.getElementById('level');
-    const expBar = document.getElementById('expBar');
+    const level = document.getElementById("level");
+    const expBar = document.getElementById("expBar");
     level.innerText = this.player.level;
     const expPercentage = (this.player.exp / this.player.expToNextLevel) * 100;
-    expBar.style.width = expPercentage + '%';
+    expBar.style.width = expPercentage + "%";
   }
 
   update() {
@@ -67,7 +75,7 @@ export default class Game {
     if (now - this.lastSpawn >= 5000) {
       this.bots.push(
         new Bot(
-          Math.floor(Math.random() * 999) + 1,
+          Math.floor(Math.random() * 9999) + 1,
           randomName(),
           Math.random() * this.map.getMapMaxWidth,
           Math.random() * this.map.getMapMaxHeight,
@@ -81,6 +89,7 @@ export default class Game {
     if (now - this.lastSpawnOrbs >= 2000) {
       this.orbs.push(
         new Orb(
+          Math.floor(Math.random() * 999) + 1,
           Math.random() * this.map.getMapMaxWidth,
           Math.random() * this.map.getMapMaxHeight,
           Math.random() * 40 + 1
@@ -108,7 +117,6 @@ export default class Game {
     const sortedPlayers = [this.player, ...this.bots].sort(
       (a, b) => b.kills - a.kills
     );
-    console.log(sortedPlayers);
 
     // fill top 5 players
     for (let i = 0; i < len; i++) {

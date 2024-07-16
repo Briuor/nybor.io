@@ -55,19 +55,17 @@ span.leaderboard-score {
 }
 
 #level {
-  position: fixed;
-  bottom: 50px;
-  left: 20%;
-  display: none;
+position: relative;
+left: -20px;
+top: -10px;
 }
 
 #expBarContainer {
-  display: none;
   position: fixed;
   bottom: 50px;
   left: 50%;
   transform: translateX(-50%);
-  width: 500px;
+  width: 383px;
   height: 10px;
   background-color: black;
 }
