@@ -10,7 +10,7 @@
     <script type="module" src="./GameObject.js"></script>
     <script type="module" src="./Game.js"></script>
     <script type="module" src="./index.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
     <div id="game">
       <canvas id="canvas" style="background: black"></canvas>
       <div id="expBarContainer">
@@ -18,7 +18,7 @@
         <div id="expBar"></div>
       </div>
       <div id="leaderboard-wrapper">
-        Leaderboard
+        <span id="leaderboard-title">Leaderboard</span>
         <ul id="leaderboard">
           <li>
             <span class="leaderboard-name">1.-</span
@@ -49,12 +49,11 @@
     </div>
 
     <div id="menu">
-      <div class="game-name center">
-        <img src="/images/gamename.png" />
+      <div class="game-name">
+        <img src="/images/logo.png" />
       </div>
       <!-- PLAY -->
       <form id="play-form">
-        <label for="name-play">Ghost Name</label>
         <input
           name="name"
           class="name"
@@ -62,7 +61,7 @@
           type="text"
           pattern="[A-Za-z].{0,7}"
           title="a-z and less than 8 characters."
-          placeholder="Unammed"
+          placeholder="Player Name"
         />
         <div class="play-btn">
           <button id="play" type="button">Play</button>
@@ -71,15 +70,18 @@
     </div>
 
     <div id="play-again-modal">
-      <div class="center">
-          <img src="/images/gamename.png" />
-      </div>
-      <form id="play-again-form">
+      <div id="backdrop"></div>
+      <div id="play-again-modal-wrapper">
+        <div>
+          <img src="/images/logo.png" />
+        </div>
+        <form id="play-again-form">
           <p id="kills"></p>
           <div class="play-btn">
-              <button id="play-again" type="submit">Play Again</button>
+            <button id="play-again" type="submit">Play Again</button>
           </div>
-      </form>
-  </div>
+        </form>
+      </div>
+    </div>
   </body>
 </html>

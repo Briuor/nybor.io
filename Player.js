@@ -1,3 +1,4 @@
+import DeathAnimation from "./DeathAnimation.js";
 import GameObject from "./GameObject.js";
 import pixelCanvas from "./pixelCanvas.js";
 
@@ -6,23 +7,24 @@ export default class Player extends GameObject {
     super(x, y, 32, "white");
     this.name = name;
     this.id = id;
-    this.speed = 200;
+    this.speed = 180;
     this.directionAngle = 0;
     this.attack = {
-      duration: 300, // ms
+      duration: 450, // ms
       isAttacking: false,
-      time: null,
+      time: 0,
       angle: 0,
+      animation: false,
     };
     this.game = game;
     this.health = 50;
     this.maxHealth = 50;
     this.damage = 20; // Damage dealt per attack
-    this.attackRange = 40;
+    this.attackRange = 65;
     this.impulse = { x: 0, y: 0, duration: 0 };
-    this.level = 1;
     this.exp = 0;
     this.expToNextLevel = 50;
+    this.level = 1;
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
 
@@ -31,7 +33,10 @@ export default class Player extends GameObject {
     this.attackImage = null;
     this.currentFrame = 0;
     this.animationTime = Date.now();
-    this.animationDuration = 100;
+    this.animationDuration = 150;
+
+    this.getHitAnimation = false;
+    this.isActive = true;
 
     // Bind the this context for the event listener
     document.addEventListener("mousemove", this.handleMouseMove.bind(this));
@@ -51,6 +56,9 @@ export default class Player extends GameObject {
   }
 
   attackAction() {
+    if(!this.isActive) return ;
+
+    this.game.attackAudio.play();
     this.attack.isAttacking = true;
     this.attack.animation = true;
     this.currentFrame = 0;
@@ -65,22 +73,14 @@ export default class Player extends GameObject {
         Math.pow(attackX - bot.x, 2) + Math.pow(attackY - bot.y, 2)
       );
 
-      if (dist <= 2 * bot.radius) {
-        bot.health -= this.damage;
-        if (bot.health <= 0) {
-          bot.health = 0;
-          this.kills += 1;
-          // Handle bot death
-          this.game.bots = this.game.bots.filter((b) => b.id !== bot.id);
-          this.game.updateLeaderBoard();
-        }
-        // Apply impulse
-        const impulseStrength = 100; // Adjust this value as needed
-        const impulseDuration = 0.5; // Duration in seconds
-        const angle = Math.atan2(bot.y - this.y, bot.x - this.x);
-        bot.impulse.x = Math.cos(angle) * impulseStrength;
-        bot.impulse.y = Math.sin(angle) * impulseStrength;
-        bot.impulse.duration = impulseDuration;
+      if (dist <= this.attackRange + bot.radius) {
+        this.game.deathAudio.play();
+        this.game.bots = this.game.bots.filter((b) => b.id !== bot.id);
+        this.game.updateLeaderBoard();
+        this.game.deathAnimations.push(
+          new DeathAnimation(bot.x, bot.y, this.game)
+        );
+        this.kills += 1;
       }
     }
   }
@@ -92,6 +92,8 @@ export default class Player extends GameObject {
   }
 
   update(dt) {
+    if(!this.isActive) return ;
+
     if (this.impulse.duration > 0) {
       const impulseX = this.impulse.x * dt;
       const impulseY = this.impulse.y * dt;
@@ -114,7 +116,7 @@ export default class Player extends GameObject {
       const dist = Math.sqrt(
         Math.pow(this.x - orb.x, 2) + Math.pow(this.y - orb.y, 2)
       );
-      if (dist < (this.radius + orb.radius)) {
+      if (dist < this.radius + orb.radius) {
         this.exp += orb.exp;
 
         if (this.exp >= this.expToNextLevel) {
@@ -123,7 +125,6 @@ export default class Player extends GameObject {
           this.maxHealth += 10;
           this.health = this.maxHealth;
         }
-
         this.game.orbs = this.game.orbs.filter((o) => o.id !== orb.id);
       }
     }
@@ -137,6 +138,8 @@ export default class Player extends GameObject {
   }
 
   move(dt) {
+    if(!this.isActive) return ;
+
     const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
     const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
 
@@ -155,107 +158,152 @@ export default class Player extends GameObject {
   }
 
   draw(ctx, camera) {
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(camera.width / 2, camera.height / 2, this.radius, 0, 2 * Math.PI);
-    ctx.fill();
+    if(!this.isActive) return ;
 
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(
-      camera.width / 2 + Math.cos(this.directionAngle) * this.attackRange,
-      camera.height / 2 + Math.sin(this.directionAngle) * this.attackRange,
-      32,
-      0,
-      2 * Math.PI
-    );
-    ctx.fill();
+    // ctx.fillStyle = this.color;
+    // ctx.beginPath();
+    // ctx.arc(camera.width / 2, camera.height / 2, this.radius, 0, 2 * Math.PI);
+    // ctx.fill();
 
-    let col;
+    // ctx.save();
+    // ctx.strokeStyle = "black";
+    // ctx.translate(
+    //   camera.width / 2 + Math.cos(this.directionAngle) * this.attackRange,
+    //   camera.height / 2 + Math.sin(this.directionAngle) * this.attackRange
+    // );
+    // ctx.rotate(this.directionAngle);
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.attackRange/2,
+    //    this.attackRange/2,
+    //   this.attackRange,
+    //   -0.5 * Math.PI,
+    //   -1.5 * Math.PI
+    // );
+    // ctx.stroke();
+    // ctx.restore();
+
+    let col, totalFrames;
     let angle = (180 * this.directionAngle) / Math.PI;
     if (angle < 0) angle = 360 + angle;
 
     if (angle >= 90 && angle < 270) {
-      col = this.attack.animation ? 2 : 0;
+      col = 0;
+      totalFrames = 3;
+      if (this.attack.animation) {
+        col = 2;
+        totalFrames = 3;
+      }
+      if (this.getHitAnimation) {
+        col = 4;
+        totalFrames = 2;
+      }
     } else {
-      col = this.attack.animation ? 3 : 1;
+      col = 1;
+      totalFrames = 3;
+      if (this.attack.animation) {
+        col = 3;
+        totalFrames = 3;
+      }
+      if (this.getHitAnimation) {
+        col = 5;
+        totalFrames = 2;
+      }
     }
-
-    let totalFrames = this.attack.animation ? 3 : 4;
 
     if (Date.now() - this.animationDuration >= this.animationTime) {
-      this.currentFrame =
-        this.currentFrame >= totalFrames ? 0 : this.currentFrame + 1;
+      if (this.currentFrame >= totalFrames) {
+        this.currentFrame = 0;
+        this.attack.animation = false;
+        this.getHitAnimation = false;
+      } else {
+        this.currentFrame += 1;
+      }
       this.animationTime = Date.now();
-    }
-    if (
-      this.attack.animation &&
-      this.currentFrame == totalFrames &&
-      totalFrames == 3
-    ) {
-      this.attack.animation = false;
     }
 
     // draw sword
     if (!this.attack.animation) {
       ctx.drawImage(
         this.swordImage,
-        this.currentFrame * 35,
-        col * 38,
-        35,
-        38,
-        camera.width / 2 + (col == 0 ? -5 : -80),
+        this.currentFrame * 58,
+        col * 29,
+        58,
+        29,
+        camera.width / 2 + (col == 0 ? -65 : -50),
         camera.height / 2 - 80,
-        35 * 2.5,
-        38 * 2.5
+        58 * 2,
+        29 * 2
       );
     }
 
     ctx.drawImage(
       this.playerImage,
-      this.currentFrame * 28,
-      col * 26,
-      28,
-      26,
-      camera.width / 2 - 28,
-      camera.height / 2 - 26,
-      28 * 2,
-      26 * 2
+      this.currentFrame * 38,
+      col * 38,
+      38,
+      38,
+      camera.width / 2 - 38,
+      camera.height / 2 - 38,
+      38 * 2,
+      38 * 2
     );
     ctx.restore();
 
+    if (!this.attack.animation) {
+    ctx.save();
+    ctx.translate(camera.width / 2, camera.height / 2);
+    ctx.rotate(this.directionAngle);
+
+    ctx.drawImage(
+      this.atkindicatorImage,
+      0,
+      0,
+      52,
+      76,
+      (-52 * 2 + 155) / 2, // offset by half image width
+      (-76 * 2) / 2, // offset by half image height
+      52 * 2,
+      76 * 2
+    );
+    ctx.restore();
+  }
+
     if (this.attack.animation) {
       ctx.save();
-
       ctx.translate(camera.width / 2, camera.height / 2);
-
-      // Rotate the canvas to the direction angle (convert to radians)
-      ctx.rotate(this.attack.angle + 3.14);
-      console.log(this.attack.angle);
+      ctx.rotate(this.attack.angle);
       ctx.drawImage(
         this.attackImage,
-        this.currentFrame * 51,
+        this.currentFrame * 52,
         0,
-        51,
-        54,
-        (-51 * 3) / 2, // offset by half image width
-        (-54 * 3) / 2, // offset by half image height
-        51 * 3,
-        54 * 3
+        52,
+        76,
+        (-52 * 2 + 155) / 2, // offset by half image width
+        (-76 * 2) / 2, // offset by half image height
+        52 * 2,
+        76 * 2
       );
       ctx.restore();
     }
 
     // Draw health bar
-    ctx.fillStyle = "red";
-    ctx.fillRect(camera.width / 2 - 50, camera.height / 2 + 55, 100, 10);
-    ctx.fillStyle = "green";
+    const elapsedTime = Date.now() - this.attack.time;
+
+    // Calculate the fill percentage
+    const remainingPercentage = Math.max(
+      100 - (elapsedTime / this.attack.duration) * 100,
+      0
+    );
+    console.log((Date.now() / (this.attack.time + this.attack.duration)) * 100);
+    ctx.fillStyle = "#f2ec8b";
     ctx.fillRect(
       camera.width / 2 - 50,
       camera.height / 2 + 55,
-      (this.health / this.maxHealth) * 100,
-      10
+      remainingPercentage,
+      5
     );
+
     this.pixelCanvas.drawName(
       ctx,
       this.name,

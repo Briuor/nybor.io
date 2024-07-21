@@ -14,23 +14,25 @@ export default class Game {
     this.orbs = [
       new Orb(
         Math.floor(Math.random() * 999) + 1,
-        Map.TILE_SIZE * 10,
-        Map.TILE_SIZE * 13,
-        40
+        Map.TILE_SIZE * 2,
+        Map.TILE_SIZE * 4,
+        10,
+        this
       ),
     ];
     this.camera = new Camera(this.canvas);
     this.player = new Player(
       0,
       "Bruno",
-      Map.TILE_SIZE * 10,
-      Map.TILE_SIZE * 10,
+      Map.TILE_SIZE * 3,
+      Map.TILE_SIZE * 4,
       this
     );
     this.bots = [
-      new Bot(1, randomName(), Map.TILE_SIZE * 10, Map.TILE_SIZE * 10, this),
+      new Bot(1, randomName(), Map.TILE_SIZE * 11, Map.TILE_SIZE * 10, this),
       new Bot(2, randomName(), Map.TILE_SIZE * 10, Map.TILE_SIZE * 10, this),
     ];
+    this.deathAnimations = []
     this.lastSpawn = Date.now();
     this.lastSpawnOrbs = Date.now();
 
@@ -40,6 +42,18 @@ export default class Game {
 
     window.addEventListener("resize", this.resizeCanvas.bind(this));
     this.resizeCanvas();
+    this.deathAudio = new Howl({
+      src: ['audio/death.wav']
+    })
+    this.attackAudio = new Howl({
+      src: ['audio/attack.wav']
+    })
+    var sound = new Howl({
+      src: ['audio/battle.mp3'],
+      autoplay: true,
+      loop: true,
+    });
+    sound.play()
   }
 
   resizeCanvas() {
@@ -50,6 +64,9 @@ export default class Game {
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.camera.render(this.ctx, this.map);
+    this.deathAnimations.map((d) => {
+      d.draw(this.ctx, this.camera);
+    });
     this.orbs.map((orb) => {
       orb.draw(this.ctx, this.camera);
     });
@@ -63,6 +80,8 @@ export default class Game {
     level.innerText = this.player.level;
     const expPercentage = (this.player.exp / this.player.expToNextLevel) * 100;
     expBar.style.width = expPercentage + "%";
+
+    
   }
 
   update() {
@@ -72,13 +91,13 @@ export default class Game {
     this.lastUpdate = now;
 
     // spawn bots every 5 seconds
-    if (now - this.lastSpawn >= 5000) {
+    if (now - this.lastSpawn >= 2000) {
       this.bots.push(
         new Bot(
           Math.floor(Math.random() * 9999) + 1,
           randomName(),
-          Math.random() * this.map.getMapMaxWidth,
-          Math.random() * this.map.getMapMaxHeight,
+          this.map.randomPositionX(),
+          this.map.randomPositionY(),
           this
         )
       );
@@ -86,13 +105,14 @@ export default class Game {
     }
 
     // spawn bots every 5 seconds
-    if (now - this.lastSpawnOrbs >= 2000) {
+    if (now - this.lastSpawnOrbs >= 1000) {
       this.orbs.push(
         new Orb(
           Math.floor(Math.random() * 999) + 1,
-          Math.random() * this.map.getMapMaxWidth,
-          Math.random() * this.map.getMapMaxHeight,
-          Math.random() * 40 + 1
+          this.map.randomPositionX(),
+          this.map.randomPositionY(),
+          10,
+          this
         )
       );
       this.lastSpawnOrbs = now;
@@ -114,7 +134,7 @@ export default class Game {
     liList[len - 1].children[0].style.display = "none";
     liList[len - 1].children[1].style.display = "none";
 
-    const sortedPlayers = [this.player, ...this.bots].sort(
+    const sortedPlayers = [...(this.player.isActive ? [this.player] : []), ...this.bots].sort(
       (a, b) => b.kills - a.kills
     );
 

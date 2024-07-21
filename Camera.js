@@ -43,10 +43,12 @@ export default class Camera {
   }
 
   update(player) {
-    this.x = player.x - this.width / 2;
-    this.y = player.y - this.height / 2;
+      this.x = player.x - this.width / 2;
+      this.y = player.y - this.height / 2;
+      
   }
 
+  
   render(ctx, map) {
     // start end
     const startCol = Math.floor(this.x / Map.TILE_SIZE);
@@ -55,19 +57,32 @@ export default class Camera {
     const endRow = startRow + this.height / Map.TILE_SIZE + 1;
     const offsetX = -this.x + startCol * Map.TILE_SIZE;
     const offsetY = -this.y + startRow * Map.TILE_SIZE;
+    for (let row = startRow; row <= endRow; row++) {
     for (let col = startCol; col <= endCol; col++) {
-      for (let row = startRow; row <= endRow; row++) {
-        if(col < 0 || row < 0) continue;
+        if(col < 0 || row < 0 || col >= map.getTilesCols || row >= map.getTilesRows) {
+          ctx.drawImage(
+            map.tilesetImage,
+            1,
+            0,
+            Map.TILE_SIZE,
+            Map.TILE_SIZE,
+            Math.round((col -startCol) * Map.TILE_SIZE + offsetX),
+            Math.round((row -startRow) * Map.TILE_SIZE + offsetY),
+            Map.TILE_SIZE,
+            Map.TILE_SIZE
+          );
+          continue;
+        }
         ctx.drawImage(
           map.tilesetImage,
           (map.tiles[row][col]-1)*Map.TILE_SIZE,
           0,
           Map.TILE_SIZE,
           Map.TILE_SIZE,
-          Math.round((col -startCol) * Map.TILE_SIZE + offsetX),
-          Math.round((row -startRow) * Map.TILE_SIZE + offsetY),
-          Map.TILE_SIZE,
-          Map.TILE_SIZE
+          Math.floor((col -startCol) * Map.TILE_SIZE + offsetX),
+          Math.floor((row -startRow) * Map.TILE_SIZE + offsetY),
+          Map.TILE_SIZE+1,
+          Map.TILE_SIZE+1
         );
 
         // ctx.fillRect(
@@ -81,4 +96,6 @@ export default class Camera {
     // remove offset
     // loop to draw de map from start to end
   }
+
+
 }

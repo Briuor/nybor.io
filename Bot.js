@@ -1,3 +1,4 @@
+import DeathAnimation from "./DeathAnimation.js";
 import GameObject from "./GameObject.js";
 import Map from "./Map.js";
 import pixelCanvas from "./pixelCanvas.js";
@@ -12,7 +13,7 @@ export default class Bot extends GameObject {
     this.x = x;
     this.y = y;
     this.directionAngle = 0;
-    this.targetRadius = 180;
+    this.targetRadius = 250;
     this.target = null;
     this.health = 50;
     this.maxHealth = 50;
@@ -25,8 +26,8 @@ export default class Bot extends GameObject {
       animation: false,
       angle: 0
     };
-    this.attackRadius = 90;
-    this.attackRange = 40;
+    this.attackRadius = 170;
+    this.attackRange = 65;
     this.nextDirectionPoint = { x: Map.TILE_SIZE, y: Map.TILE_SIZE };
     this.impulse = { x: 0, y: 0, duration: 0 };
     this.pixelCanvas = new pixelCanvas();
@@ -35,9 +36,9 @@ export default class Bot extends GameObject {
     this.expToNextLevel = 50;
     this.level = 1;
 
-    this.botImage = game.loader.getImage("ghost");
-    this.swordImage = game.loader.getImage("sword");
-    this.attackImage = game.loader.getImage("attack");
+    this.botImage = game.loader.getImage("player");
+    this.swordImage = game.loader.getImage("sc");
+    this.attackImage = game.loader.getImage("atk");
     this.currentFrame = 0;
     this.animationTime = Date.now();
     this.animationDuration = 100;
@@ -75,10 +76,8 @@ export default class Bot extends GameObject {
       );
 
       if (distance <= 20) {
-        this.nextDirectionPoint.x =
-          Math.random() * this.game.map.getMapMaxWidth;
-        this.nextDirectionPoint.y =
-          Math.random() * this.game.map.getMapMaxHeight;
+        this.nextDirectionPoint.x = this.game.map.randomPositionX()
+        this.nextDirectionPoint.y = this.game.map.randomPositionY()
       }
     }
   }
@@ -97,6 +96,7 @@ export default class Bot extends GameObject {
   }
 
   attackAction() {
+    this.game.attackAudio.play();
     this.attack.isAttacking = true;
     this.attack.animation = true;
     this.currentFrame = 0;
@@ -107,7 +107,7 @@ export default class Bot extends GameObject {
     const attackY = this.y + Math.sin(this.directionAngle) * this.attackRange;
 
     const enemies = [
-      this.game.player,
+      ...(this.game.player.isActive ? [this.game.player] : []),
       ...this.game.bots.filter((bot) => bot.id !== this.id),
     ];
     for (let i = 0; i < enemies.length; i++) {
@@ -116,18 +116,18 @@ export default class Bot extends GameObject {
         Math.pow(attackX - enemy.x, 2) + Math.pow(attackY - enemy.y, 2)
       );
 
-      if (dist <= 2 * enemy.radius) {
-        enemy.health -= this.damage;
-        if (enemy.health <= 0) {
-          enemy.health = 0;
-          this.kills += 1;
-          
-
-          // Handle death
+      if (dist <= this.attackRange + enemy.radius) {
+        this.kills += 1;
           if (enemy.id === this.game.player.id) {
-            // this.game.player = null;
-            // this.game.playAgainModal.style.display = "block";
+            this.game.deathAudio.play()
+            this.game.deathAnimations.push(new DeathAnimation( enemy.x, enemy.y, this.game));
+            this.game.player.isActive = false;
+            setTimeout(() => {
+              this.game.playAgainModal.classList.add("active")
+          }, 2000); 
           } else {
+            this.game.deathAudio.play()
+            this.game.deathAnimations.push(new DeathAnimation( enemy.x, enemy.y, this.game));
             this.game.bots = this.game.bots.filter(
               (bot) => bot.id !== enemy.id
             );
@@ -135,15 +135,6 @@ export default class Bot extends GameObject {
 
           this.game.updateLeaderBoard();
         }
-
-        // Apply impulse
-        const impulseStrength = 200; // Adjust this value as needed
-        const impulseDuration = 0.5; // Duration in seconds
-        const angle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
-        enemy.impulse.x = Math.cos(angle) * impulseStrength;
-        enemy.impulse.y = Math.sin(angle) * impulseStrength;
-        enemy.impulse.duration = impulseDuration;
-      }
     }
   }
 
@@ -176,8 +167,6 @@ export default class Bot extends GameObject {
         if (this.exp >= this.expToNextLevel) {
           this.exp = 0;
           this.level++;
-          this.maxHealth += 10;
-          this.health = this.maxHealth;
         }
         
         this.game.orbs = this.game.orbs.filter((o) => o !== orb);
@@ -192,7 +181,7 @@ export default class Bot extends GameObject {
 
     if (this.target) {
       // check if target still exists and is still alive searching by game.bots
-      const target = [this.game.player, ...this.game.bots].find(
+      const target = [...(this.game.player.isActive ? [this.game.player]: []), ...this.game.bots].find(
         (bot) => bot.id === this.target.id
       );
       if (target) {
@@ -211,7 +200,7 @@ export default class Bot extends GameObject {
       if (distToTarget <= this.attackRadius) {
         if (this.attack.waitTime === null) {
           // Set a random delay before attacking
-          this.attack.waitTime = Date.now() + Math.random() * 500 + 100; // random delay between 500ms and 600ms
+          this.attack.waitTime = Date.now() + Math.random() * 300 + 100; // random delay between 300ms and 400ms
         }
 
         if (Date.now() >= this.attack.waitTime) {
@@ -244,7 +233,7 @@ export default class Bot extends GameObject {
     // ctx.arc(
     //   this.x - camera.x + Math.cos(this.directionAngle) * this.attackRange,
     //   this.y - camera.y + Math.sin(this.directionAngle) * this.attackRange,
-    //   32,
+    //   this.attackRange,
     //   0,
     //   2 * Math.PI
     // );
@@ -260,14 +249,14 @@ export default class Bot extends GameObject {
       col = this.attack.animation ? 3 : 1;
     }
 
-    let totalFrames = this.attack.animation ? 3 : 4;
+    let totalFrames = this.attack.animation ? 2 : 3;
 
     if (Date.now() - this.animationDuration >= this.animationTime) {
       this.currentFrame =
         this.currentFrame >= totalFrames ? 0 : this.currentFrame + 1;
       this.animationTime = Date.now();
     }
-    if (this.attack.animation && this.currentFrame == totalFrames && totalFrames == 3) {
+    if (this.attack.animation && this.currentFrame == totalFrames && totalFrames == 2) {
       this.attack.animation = false;
     }
 
@@ -275,29 +264,29 @@ export default class Bot extends GameObject {
     if (!this.attack.animation) {
       ctx.drawImage(
         this.swordImage,
-        this.currentFrame * 35,
-        col*38,
-        35,
-        38,
-        this.x -camera.x +( col == 0 ? -5 : -80),
+        this.currentFrame * 58,
+        col*29,
+        58,
+        29,
+        this.x -camera.x +( col == 0 ? -65 : -50),
         this.y -camera.y - 80,
-        35*2.5,
-        38*2.5
+        58*2,
+        29*2
       );
     }
 
+
     ctx.drawImage(
       this.botImage,
-      this.currentFrame * 28,
-      col * 26,
-      28,
-      26,
-      this.x -camera.x - 28,
-      this.y -camera.y - 26,
-      28*2,
-      26*2
+      this.currentFrame * 38,
+      col * 38,
+      38,
+      38,
+      this.x -camera.x - 38,
+      this.y -camera.y - 38,
+      38*2,
+      38*2
     );
-    ctx.restore();
 
     if (this.attack.animation) {
       ctx.save();
@@ -305,55 +294,54 @@ export default class Bot extends GameObject {
       ctx.translate(this.x -camera.x, this.y -camera.y);
 
       // Rotate the canvas to the direction angle (convert to radians)
-      ctx.rotate(this.attack.angle + 3.14);
-      console.log(this.attack.angle);
+      ctx.rotate(this.attack.angle);
       ctx.drawImage(
         this.attackImage,
-        this.currentFrame * 51,
+        this.currentFrame * 52,
         0,
-        51,
-        54,
-        -51*3 / 2, // offset by half image width
-        -54*3 / 2, // offset by half image height
-        51*3,
-        54*3
+        52,
+        76,
+        -52*3 / 2, // offset by half image width
+        -76*3 / 2, // offset by half image height
+        52*3,
+        76*3
       );
       ctx.restore();
     }
 
 
     // Draw health bar
-    ctx.fillStyle = "red";
-    ctx.fillRect(this.x - camera.x - 50, this.y - camera.y + 55, 100, 10);
-    ctx.fillStyle = "green";
-    ctx.fillRect(
-      this.x - camera.x - 50,
-      this.y - camera.y + 55,
-      (this.health / this.maxHealth) * 100,
-      10
-    );
+    // ctx.fillStyle = "red";
+    // ctx.fillRect(this.x - camera.x - 50, this.y - camera.y + 55, 100, 10);
+    // ctx.fillStyle = "green";
+    // ctx.fillRect(
+    //   this.x - camera.x - 50,
+    //   this.y - camera.y + 55,
+    //   (this.health / this.maxHealth) * 100,
+    //   10
+    // );
 
-    // Target Area
-    ctx.beginPath();
-    ctx.arc(
-      this.x - camera.x,
-      this.y - camera.y,
-      this.targetRadius,
-      0,
-      2 * Math.PI
-    );
-    ctx.stroke();
+    // // Target Area
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.x - camera.x,
+    //   this.y - camera.y,
+    //   this.targetRadius,
+    //   0,
+    //   2 * Math.PI
+    // );
+    // ctx.stroke();
 
-    // Attack Area
-    ctx.beginPath();
-    ctx.arc(
-      this.x - camera.x,
-      this.y - camera.y,
-      this.attackRadius,
-      0,
-      2 * Math.PI
-    );
-    ctx.stroke();
+    // // Attack Area
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.x - camera.x,
+    //   this.y - camera.y,
+    //   this.attackRadius,
+    //   0,
+    //   2 * Math.PI
+    // );
+    // ctx.stroke();
 
     
 

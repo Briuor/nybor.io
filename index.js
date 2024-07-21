@@ -6,26 +6,32 @@ const $game = document.getElementById("game");
 const $canvas = document.getElementById("canvas");
 const $leaderboardWrapper = document.getElementById("leaderboard-wrapper");
 const $menu = document.getElementById("menu");
+const $expBarContainer = document.getElementById("expBarContainer");
 
-// $play.addEventListener("click", () => {
+$play.addEventListener("click", () => {
   $game.style.display = "block";
   $menu.style.display = "none";
   $leaderboardWrapper.style.display = "block";
   $canvas.style.display = "block";
+  $expBarContainer.style.display = 'block';
 
   const loader = new Loader();
 
   Promise.all([
-    loader.loadImage("ghost", "images/ghost.png"),
-    loader.loadImage("sword", "images/sword.png"),
-    loader.loadImage("attack", "images/attack.png"),
+    loader.loadImage("player", "images/player.png"),
+    loader.loadImage("sc", "images/sc.png"),
+    loader.loadImage("atk", "images/atk.png"),
+    loader.loadImage("atkindicator", "images/atkindicator.png"),
     loader.loadImage("tileset", "images/tileset.png"),
-  ]).then((res) => {
+    loader.loadImage("heart", "images/heart.png"),
+    loader.loadImage("death", "images/die.png"),
+  ]).then((res) => {  
     const game = new Game(loader);
-    game.player.playerImage = loader.getImage("ghost");
-    game.player.swordImage = loader.getImage("sword");
-    game.player.attackImage = loader.getImage("attack");
+    game.player.playerImage = loader.getImage("player");
+    game.player.swordImage = loader.getImage("sc");
+    game.player.attackImage = loader.getImage("atk");
+    game.player.atkindicatorImage = loader.getImage("atkindicator");
     game.map.tilesetImage = loader.getImage("tileset");
     game.start();
   });
-// });
+});
