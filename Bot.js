@@ -4,7 +4,7 @@ import Map from "./Map.js";
 import pixelCanvas from "./pixelCanvas.js";
 
 export default class Bot extends GameObject {
-  constructor(id, name, x, y, game) {
+  constructor(id, name, x, y, exp, game) {
     super(x, y, 32, "red");
     this.id = id;
     this.name = name;
@@ -24,17 +24,27 @@ export default class Bot extends GameObject {
       time: null,
       waitTime: null,
       animation: false,
-      angle: 0
+      angle: 0,
     };
     this.attackRadius = 170;
     this.attackRange = 65;
-    this.nextDirectionPoint = { x: Map.TILE_SIZE, y: Map.TILE_SIZE };
+    this.nextDirectionPoint = {
+      x: this.game.map.randomPositionX(),
+      y: this.game.map.randomPositionY(),
+    };
     this.impulse = { x: 0, y: 0, duration: 0 };
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
     this.exp = 0;
     this.expToNextLevel = 50;
+    this.totalExp = 0;
     this.level = 1;
+    console.log(exp)
+    this.increaseExp(exp);
+    this.maxLevel = 10;
+    50, 100, 150, 200, 250, 300, 350, 400, 450, 500;
+    500 + 450 + 400 + 350 + 300 + 250 + 200 + 150 + 100 + 50;
+
 
     this.botImage = game.loader.getImage("player");
     this.swordImage = game.loader.getImage("sc");
@@ -42,6 +52,8 @@ export default class Bot extends GameObject {
     this.currentFrame = 0;
     this.animationTime = Date.now();
     this.animationDuration = 100;
+
+    this.type = "bot";
   }
 
   move(dt) {
@@ -76,23 +88,40 @@ export default class Bot extends GameObject {
       );
 
       if (distance <= 20) {
-        this.nextDirectionPoint.x = this.game.map.randomPositionX()
-        this.nextDirectionPoint.y = this.game.map.randomPositionY()
+        this.nextDirectionPoint.x = this.game.map.randomPositionX();
+        this.nextDirectionPoint.y = this.game.map.randomPositionY();
       }
     }
   }
 
-  findTargetToChase(enemies) {
-    let nearEnemy = null;
-    for (let enemy of enemies) {
-      const distToEnemy = Math.sqrt(
-        Math.pow(enemy.x - this.x, 2) + Math.pow(enemy.y - this.y, 2)
+  checkTargetAreaCollision = (entities) => {
+    let near = { entity: null, dist: Infinity };
+    for (let entity of entities) {
+
+      const dist = Math.sqrt(
+        Math.pow(entity.x - this.x, 2) + Math.pow(entity.y - this.y, 2)
       );
-      if (distToEnemy <= this.targetRadius) {
-        nearEnemy = enemy;
+      if (dist <= this.targetRadius && dist < near.dist) {
+        near.entity = entity;
+        near.dist = dist;
       }
     }
-    return nearEnemy;
+    return near.entity;
+  };
+
+
+  findTargetToChase() {
+    const enemies = [
+      this.game.player,
+      ...this.game.bots.filter((bot) => bot.id !== this.id),
+    ]
+
+    const nearEnemy = this.checkTargetAreaCollision(enemies);
+    if(nearEnemy) return nearEnemy;
+
+    const nearOrb = this.checkTargetAreaCollision(this.game.orbs);
+    if(nearOrb) return nearOrb;
+
   }
 
   attackAction() {
@@ -118,72 +147,67 @@ export default class Bot extends GameObject {
 
       if (dist <= this.attackRange + enemy.radius) {
         this.kills += 1;
-          if (enemy.id === this.game.player.id) {
-            this.game.deathAudio.play()
-            this.game.deathAnimations.push(new DeathAnimation( enemy.x, enemy.y, this.game));
-            this.game.player.isActive = false;
-            setTimeout(() => {
-              this.game.playAgainModal.classList.add("active")
-          }, 2000); 
-          } else {
-            this.game.deathAudio.play()
-            this.game.deathAnimations.push(new DeathAnimation( enemy.x, enemy.y, this.game));
-            this.game.bots = this.game.bots.filter(
-              (bot) => bot.id !== enemy.id
-            );
-          }
-
-          this.game.updateLeaderBoard();
+        this.increaseExp(Math.floor(enemy.exp > 30 ? enemy.exp / 3 : 10))
+        if (enemy.id === this.game.player.id) {
+          this.game.deathAudio.play();
+          this.game.deathAnimations.push(
+            new DeathAnimation(enemy.x, enemy.y, this.game)
+          );
+          this.game.player.isActive = false;
+          setTimeout(() => {
+            this.game.playAgainModal.classList.add("active");
+          }, 2000);
+        } else {
+          this.game.deathAudio.play();
+          this.game.deathAnimations.push(
+            new DeathAnimation(enemy.x, enemy.y, this.game)
+          );
+          this.game.bots = this.game.bots.filter((bot) => bot.id !== enemy.id);
         }
+
+        this.game.updateLeaderBoard();
+      }
     }
   }
 
-  update(game, dt) {
-    if (this.impulse.duration > 0) {
-      const impulseX = this.impulse.x * dt;
-      const impulseY = this.impulse.y * dt;
-      let nextX = this.x + impulseX;
-      let nextY = this.y + impulseY;
+  increaseExp(exp) {
+    this.exp += exp; 
+    this.totalExp += exp;
 
-      // Check for collisions with the map
-      if (!this.game.map.isWalkable(nextX, nextY)) {
-        nextX = this.x;
-        nextY = this.y;
-      }
-
-      this.x = nextX;
-      this.y = nextY;
-      this.impulse.duration -= dt;
+    while(this.exp >= this.expToNextLevel) {
+      this.level += 1;
+      this.exp = this.exp % this.expToNextLevel;
+      this.expToNextLevel *= 2;
     }
 
+    if(this.level >= this.maxLevel) {
+      this.exp = 0
+      this.level = maxLevel;
+    };
+  }
+
+  update(dt) {
     for (let i = 0; i < this.game.orbs.length; i++) {
       let orb = this.game.orbs[i];
       if (
         Math.abs(this.x - orb.x) < this.radius &&
         Math.abs(this.y - orb.y) < this.radius
       ) {
-        this.exp += orb.exp;
-
-        if (this.exp >= this.expToNextLevel) {
-          this.exp = 0;
-          this.level++;
-        }
-        
+        this.increaseExp(orb.exp);
         this.game.orbs = this.game.orbs.filter((o) => o !== orb);
       }
     }
 
-    const target = this.findTargetToChase([
-      game.player,
-      ...game.bots.filter((bot) => bot.id !== this.id),
-    ]);
+    const target = this.findTargetToChase();
     this.target = target ?? null;
 
     if (this.target) {
       // check if target still exists and is still alive searching by game.bots
-      const target = [...(this.game.player.isActive ? [this.game.player]: []), ...this.game.bots].find(
-        (bot) => bot.id === this.target.id
-      );
+      const target = [
+        ...(this.game.player.isActive ? [this.game.player] : []),
+        ...this.game.bots,
+        ...this.game.orbs,
+      ].find((bot) => bot.id === this.target.id);
       if (target) {
         this.target = target;
       } else {
@@ -191,7 +215,7 @@ export default class Bot extends GameObject {
       }
     }
 
-    if (this.target && !this.attack.isAttacking) {
+    if (this.target && !this.attack.isAttacking && this.target.type !== "orb") {
       const distToTarget = Math.sqrt(
         Math.pow(this.target.x - this.x, 2) +
           Math.pow(this.target.y - this.y, 2)
@@ -218,7 +242,6 @@ export default class Bot extends GameObject {
       }
     }
     this.move(dt);
-    
   }
 
   draw(ctx, camera) {
@@ -256,7 +279,11 @@ export default class Bot extends GameObject {
         this.currentFrame >= totalFrames ? 0 : this.currentFrame + 1;
       this.animationTime = Date.now();
     }
-    if (this.attack.animation && this.currentFrame == totalFrames && totalFrames == 2) {
+    if (
+      this.attack.animation &&
+      this.currentFrame == totalFrames &&
+      totalFrames == 2
+    ) {
       this.attack.animation = false;
     }
 
@@ -265,16 +292,15 @@ export default class Bot extends GameObject {
       ctx.drawImage(
         this.swordImage,
         this.currentFrame * 58,
-        col*29,
+        col * 29,
         58,
         29,
-        this.x -camera.x +( col == 0 ? -65 : -50),
-        this.y -camera.y - 80,
-        58*2,
-        29*2
+        this.x - camera.x + (col == 0 ? -65 : -50),
+        this.y - camera.y - 80,
+        58 * 2,
+        29 * 2
       );
     }
-
 
     ctx.drawImage(
       this.botImage,
@@ -282,16 +308,16 @@ export default class Bot extends GameObject {
       col * 38,
       38,
       38,
-      this.x -camera.x - 38,
-      this.y -camera.y - 38,
-      38*2,
-      38*2
+      this.x - camera.x - 38,
+      this.y - camera.y - 38,
+      38 * 2,
+      38 * 2
     );
 
     if (this.attack.animation) {
       ctx.save();
 
-      ctx.translate(this.x -camera.x, this.y -camera.y);
+      ctx.translate(this.x - camera.x, this.y - camera.y);
 
       // Rotate the canvas to the direction angle (convert to radians)
       ctx.rotate(this.attack.angle);
@@ -301,14 +327,13 @@ export default class Bot extends GameObject {
         0,
         52,
         76,
-        -52*3 / 2, // offset by half image width
-        -76*3 / 2, // offset by half image height
-        52*3,
-        76*3
+        (-52 * 3) / 2, // offset by half image width
+        (-76 * 3) / 2, // offset by half image height
+        52 * 3,
+        76 * 3
       );
       ctx.restore();
     }
-
 
     // Draw health bar
     // ctx.fillStyle = "red";
@@ -321,30 +346,34 @@ export default class Bot extends GameObject {
     //   10
     // );
 
-    // // Target Area
-    // ctx.beginPath();
-    // ctx.arc(
-    //   this.x - camera.x,
-    //   this.y - camera.y,
-    //   this.targetRadius,
-    //   0,
-    //   2 * Math.PI
-    // );
-    // ctx.stroke();
+    // Target Area
+    ctx.beginPath();
+    ctx.arc(
+      this.x - camera.x,
+      this.y - camera.y,
+      this.targetRadius,
+      0,
+      2 * Math.PI
+    );
+    ctx.stroke();
 
-    // // Attack Area
-    // ctx.beginPath();
-    // ctx.arc(
-    //   this.x - camera.x,
-    //   this.y - camera.y,
-    //   this.attackRadius,
-    //   0,
-    //   2 * Math.PI
-    // );
-    // ctx.stroke();
+    // Attack Area
+    ctx.beginPath();
+    ctx.arc(
+      this.x - camera.x,
+      this.y - camera.y,
+      this.attackRadius,
+      0,
+      2 * Math.PI
+    );
+    ctx.stroke();
 
-    
-
-    this.pixelCanvas.drawName(ctx, this.name, 1.5, Math.floor(this.x - camera.x -5 - (this.name.length * 2)), this.y - camera.y + 40);
+    this.pixelCanvas.drawName(
+      ctx,
+      this.name,
+      1.5,
+      Math.floor(this.x - camera.x - 5 - this.name.length * 2),
+      this.y - camera.y + 40
+    );
   }
 }

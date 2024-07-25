@@ -11,30 +11,15 @@ export default class Game {
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
     this.map = new Map();
-    this.orbs = [
-      new Orb(
-        Math.floor(Math.random() * 999) + 1,
-        Map.TILE_SIZE * 2,
-        Map.TILE_SIZE * 4,
-        10,
-        this
-      ),
-    ];
-    this.camera = new Camera(this.canvas);
-    this.player = new Player(
-      0,
-      "Bruno",
-      Map.TILE_SIZE * 3,
-      Map.TILE_SIZE * 4,
-      this
-    );
-    this.bots = [
-      new Bot(1, randomName(), Map.TILE_SIZE * 11, Map.TILE_SIZE * 10, this),
-      new Bot(2, randomName(), Map.TILE_SIZE * 10, Map.TILE_SIZE * 10, this),
-    ];
     this.deathAnimations = []
     this.lastSpawn = Date.now();
     this.lastSpawnOrbs = Date.now();
+    this.camera = new Camera(this.canvas);
+
+    this.orbs = [];
+    this.bots = [];
+    this.player = null;
+    this.generateRandomGame();
 
     this.leaderBoardWrapper = document.getElementById("leaderboard-wrapper");
     this.leaderBoard = document.getElementById("leaderboard");
@@ -56,6 +41,67 @@ export default class Game {
     sound.play()
   }
 
+  static EXP_TO_LEVEL_10 = 2750
+
+  generateRandomGame() {
+    for (let i = 0; i < 30; i++) {
+      this.orbs.push(
+        new Orb(
+          Math.floor(Math.random() * 999) + 1,
+          this.map.randomPositionX(),
+          this.map.randomPositionY(),
+          Math.floor(Math.random() * 10 + 2),
+          this
+        )
+      );
+    }
+  
+    this.player = new Player(
+      0,
+      "Bruno",
+      this.map.randomPositionX(),
+      this.map.randomPositionY(),
+      Math.floor(Math.random() * Game.EXP_TO_LEVEL_10),
+      this
+    );
+  
+    for (let i = 0; i < 100; i++) {
+      const randomX = this.map.randomPositionX();
+      const randomY = this.map.randomPositionY();
+  
+      const entities = [
+        this.player,
+        ...this.bots,
+      ];
+
+      let spawn = true;
+  
+      for (let entity of entities) {
+        const dist = Math.sqrt(
+          Math.pow(randomX - entity.x, 2) + Math.pow(randomY - entity.y, 2)
+        );
+  
+        if (dist <= 500) {
+          spawn = false;
+          break;
+        }
+      }
+
+      if(!spawn) continue;
+  
+      this.bots.push(
+        new Bot(
+          Math.floor(Math.random() * 9999) + 1,
+          randomName(),
+          randomX,
+          randomY,
+          Math.floor(Math.random() * Game.EXP_TO_LEVEL_10),
+          this
+        )
+      );
+    }
+  }
+
   resizeCanvas() {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
@@ -75,7 +121,7 @@ export default class Game {
       bot.draw(this.ctx, this.camera);
     });
 
-    const level = document.getElementById("level");
+    const level = document.getElementById("level-content");
     const expBar = document.getElementById("expBar");
     level.innerText = this.player.level;
     const expPercentage = (this.player.exp / this.player.expToNextLevel) * 100;
@@ -90,17 +136,42 @@ export default class Game {
     let dt = (now - this.lastUpdate) / 1000;
     this.lastUpdate = now;
 
-    // spawn bots every 5 seconds
+
+    // generate random coordinate
+    // check if has any entity there
+    // if not spawn
+    // else don't spawn and generate another coordinate
     if (now - this.lastSpawn >= 2000) {
-      this.bots.push(
-        new Bot(
-          Math.floor(Math.random() * 9999) + 1,
-          randomName(),
-          this.map.randomPositionX(),
-          this.map.randomPositionY(),
-          this
-        )
-      );
+      let shouldSpawn = true;
+      const randomX = this.map.randomPositionX();
+      const randomY = this.map.randomPositionY();
+
+      const entities = [...(this.player.isActive ? [this.player] : []), ...this.bots];
+
+      for(let entity of entities) {
+        const dist = Math.sqrt(
+          Math.pow(randomX - entity.x, 2) + Math.pow(randomY - entity.y, 2)
+        );
+
+        if (dist <= 400) {  
+          shouldSpawn = false;
+          break;
+        }    
+      }
+
+      if(shouldSpawn) {
+        this.bots.push(
+          new Bot(
+            Math.floor(Math.random() * 9999) + 1,
+            randomName(),
+            randomX,
+            randomY,
+            Math.floor(Math.random() * Game.EXP_TO_LEVEL_10),
+            this
+          )
+        );
+      }
+
       this.lastSpawn = now;
     }
 
@@ -111,7 +182,7 @@ export default class Game {
           Math.floor(Math.random() * 999) + 1,
           this.map.randomPositionX(),
           this.map.randomPositionY(),
-          10,
+          Math.floor(Math.random() * 10 + 2),
           this
         )
       );
@@ -121,7 +192,7 @@ export default class Game {
     // update movement
     this.player.update(dt);
     this.bots.map((bot) => {
-      bot.update(this, dt);
+      bot.update(dt);
     });
 
     this.camera.update(this.player);
@@ -129,37 +200,42 @@ export default class Game {
   }
 
   updateLeaderBoard() {
-    let liList = this.leaderBoard.children;
-    let len = liList.length;
-    liList[len - 1].children[0].style.display = "none";
-    liList[len - 1].children[1].style.display = "none";
+    let $liList = this.leaderBoard.children;
+    let len = $liList.length;
+    let isPlayerTop5 = false;
 
-    const sortedPlayers = [...(this.player.isActive ? [this.player] : []), ...this.bots].sort(
-      (a, b) => b.kills - a.kills
+    $liList[len - 1].style.display = "none";
+
+    const sortedEntities = [...(this.player.isActive ? [this.player] : []), ...this.bots].sort(
+      (a, b) => b.totalExp - a.totalExp
     );
 
     // fill top 5 players
     for (let i = 0; i < len; i++) {
-      let player = sortedPlayers[i];
-      let nameEl = liList[i].children[0];
-      let killsEl = liList[i].children[1];
-      let highlight = "";
-      if (player) {
-        if (player.id == this.player.id) {
-          highlight = ">";
-          if (i == len - 1) {
-            liList[len - 1].children[0].style.display = "inline-block";
-            liList[len - 1].children[1].style.display = "inline-block";
-            nameEl.innerText = highlight + "?." + player.name;
-            killsEl.innerText = player.kills;
-            break;
-          }
+      let entity = sortedEntities[i];
+      let $nameEl = $liList[i].children[0];
+      let $expEl = $liList[i].children[1];
+
+      if (entity) {
+        if(entity.id === this.player.id && i!= len -1 && !isPlayerTop5) 
+          isPlayerTop5 = true;
+        
+        if(i === len -1 && !isPlayerTop5) {
+          $liList[len - 1].style.display = "block";
+          const playerPosition = sortedEntities.findIndex((entity) =>entity.id === this.player.id);
+          $nameEl.innerText = (playerPosition + 1) + "." + this.player.name;
+          $expEl.innerText = this.player.totalExp;
+          $liList[i].style.backgroundColor = "rgba(25, 25, 25, 0.8)";
+          return;
         }
-        nameEl.innerText = highlight + (i + 1) + "." + player.name;
-        killsEl.innerText = player.kills;
+        $liList[i].style.backgroundColor = entity.id === this.player.id ? "rgba(25, 25, 25, 0.8)" : "rgba(0, 0, 0, 0.8)";
+
+        $nameEl.innerText = (i + 1) + "." + entity.name;
+        $expEl.innerText = entity.totalExp;
       } else {
-        nameEl.innerText = highlight + (i + 1) + ".-";
-        killsEl.innerText = "-";
+        $nameEl.innerText = (i + 1) + ".-";
+        $expEl.innerText = "-";
+        $liList[i].style.backgroundColor = "rgba(0, 0, 0, 0.8)"
       }
     }
   }

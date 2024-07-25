@@ -6,6 +6,7 @@ export default class Orb extends GameObject {
         super(x, y, 20, "pink");
         this.id = id;
         this.exp = exp
+        this.type = "orb",
         this.radius = this.radius * this.exp/10
         this.heartImage = game.loader.getImage("heart");
         this.currentFrame = 0;
@@ -20,22 +21,25 @@ export default class Orb extends GameObject {
                 this.currentFrame >= this.totalFrames ? 0 : this.currentFrame + 1;
             this.animationTime = Date.now();
         }
+
+
+        // ctx.fillStyle = this.color;
+        // ctx.beginPath();
+        // ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, 2 * Math.PI);
+        // ctx.fill();
+        
         ctx.drawImage(
             this.heartImage,
             this.currentFrame * 25,
             0,
             25,
             22,
-            this.x - camera.x -25,
-            this.y - camera.y - 22,
-            25 * 2,
-            22 * 2
+            this.x - camera.x - this.radius,
+            this.y - camera.y - this.radius,
+            this.radius*2,
+            this.radius*2,
           );
 
-        //   ctx.fillStyle = this.color;
-        //   ctx.beginPath();
-        //   ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, 2 * Math.PI);
-        //   ctx.fill();
 
         
       }

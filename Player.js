@@ -3,7 +3,7 @@ import GameObject from "./GameObject.js";
 import pixelCanvas from "./pixelCanvas.js";
 
 export default class Player extends GameObject {
-  constructor(id, name, x, y, game) {
+  constructor(id, name, x, y, exp, game) {
     super(x, y, 32, "white");
     this.name = name;
     this.id = id;
@@ -23,8 +23,11 @@ export default class Player extends GameObject {
     this.attackRange = 65;
     this.impulse = { x: 0, y: 0, duration: 0 };
     this.exp = 0;
+    this.totalExp = 0;
     this.expToNextLevel = 50;
     this.level = 1;
+    this.maxLevel = 10;
+
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
 
@@ -81,6 +84,30 @@ export default class Player extends GameObject {
           new DeathAnimation(bot.x, bot.y, this.game)
         );
         this.kills += 1;
+        this.increaseExp(Math.floor(bot.exp > 30 ? bot.exp / 3 : 10));
+      }
+    }
+  }
+
+  increaseExp(exp) {
+    this.exp += exp; 
+    this.totalExp += exp;
+    console.log(`Adding ${exp} experience.`);
+    console.log(`Initial state: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`);
+
+    while(this.exp >= this.expToNextLevel && this.level < this.maxLevel) {
+      this.exp -= this.expToNextLevel;
+      this.level += 1;
+      this.expToNextLevel *= 2;
+
+      console.log(`Leveled up: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`);
+
+      if (this.level >= this.maxLevel) {
+        this.exp = 0;
+        this.level = this.maxLevel;
+        console.log(`Max level reached: level=${this.level}, exp=${this.exp}`);
+
+        break;
       }
     }
   }
@@ -117,14 +144,7 @@ export default class Player extends GameObject {
         Math.pow(this.x - orb.x, 2) + Math.pow(this.y - orb.y, 2)
       );
       if (dist < this.radius + orb.radius) {
-        this.exp += orb.exp;
-
-        if (this.exp >= this.expToNextLevel) {
-          this.exp = 0;
-          this.level++;
-          this.maxHealth += 10;
-          this.health = this.maxHealth;
-        }
+        this.increaseExp(orb.exp);
         this.game.orbs = this.game.orbs.filter((o) => o.id !== orb.id);
       }
     }
@@ -295,7 +315,6 @@ export default class Player extends GameObject {
       100 - (elapsedTime / this.attack.duration) * 100,
       0
     );
-    console.log((Date.now() / (this.attack.time + this.attack.duration)) * 100);
     ctx.fillStyle = "#f2ec8b";
     ctx.fillRect(
       camera.width / 2 - 50,
