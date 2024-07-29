@@ -45,14 +45,14 @@ export default class DeathAnimation extends GameObject {
     if (this.alpha >= 0) {
       ctx.drawImage(
         this.deathImage,
-        this.currentFrame * 59,
+        this.currentFrame * 177,
         0,
-        59,
-        46,
-        this.x - camera.x - 59,
-        this.y - camera.y - 46,
-        59 * 2,
-        46 * 2
+        177,
+        138,
+        this.x - camera.x - 177/2,
+        this.y - camera.y - 138/2,
+        177,
+        138
       );
     }
 

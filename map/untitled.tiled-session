@@ -7,25 +7,31 @@
     "expandedProjectPaths": [
     ],
     "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
         "tileset.tsx": {
-            "scaleInDock": 1,
+            "scaleInDock": 0.33,
             "scaleInEditor": 1
         },
         "untitled.tmx": {
-            "scale": 1.5,
-            "selectedLayer": 0,
+            "scale": 0.25,
+            "selectedLayer": -1,
             "viewCenter": {
-                "x": 734.3333333333333,
-                "y": 398.33333333333337
+                "x": 1626,
+                "y": 922
             }
+        },
+        "untitled.tmx#tileset": {
+            "scaleInDock": 1
         }
     },
     "last.exportedFilePath": "/home/bruno/projects/killtheboss/map",
     "last.imagePath": "/home/bruno/projects/killtheboss/images",
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
-    "map.tileHeight": 79,
-    "map.tileWidth": 79,
+    "map.tileHeight": 179,
+    "map.tileWidth": 179,
     "openFiles": [
         "untitled.tmx",
         "tileset.tsx"
@@ -35,9 +41,10 @@
         "tileset.tsx",
         "untitled.tmx"
     ],
+    "resizeMap.removeObjects": true,
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {
-        "height": 79,
-        "width": 79
+        "height": 179,
+        "width": 179
     }
 }

@@ -39,14 +39,12 @@ export default class Bot extends GameObject {
     this.expToNextLevel = 50;
     this.totalExp = 0;
     this.level = 1;
-    console.log(exp)
     this.increaseExp(exp);
     this.maxLevel = 10;
-    50, 100, 150, 200, 250, 300, 350, 400, 450, 500;
-    500 + 450 + 400 + 350 + 300 + 250 + 200 + 150 + 100 + 50;
-
-
-    this.botImage = game.loader.getImage("player");
+    this.levels = [
+      { image: game.loader.getImage("level1") },
+      { image: game.loader.getImage("level2") },
+    ];
     this.swordImage = game.loader.getImage("sc");
     this.attackImage = game.loader.getImage("atk");
     this.currentFrame = 0;
@@ -112,7 +110,7 @@ export default class Bot extends GameObject {
 
   findTargetToChase() {
     const enemies = [
-      this.game.player,
+      ...(this.game.player.isActive ? [this.game.player] : []),
       ...this.game.bots.filter((bot) => bot.id !== this.id),
     ]
 
@@ -124,8 +122,27 @@ export default class Bot extends GameObject {
 
   }
 
+  // check if the bot is in the camera area to play a sound
+  inCamera() {
+    const x = this.x ;
+    const y = this.y ;
+    console.log({x, y, cx: this.game.camera.x, cy: this.game.camera.y, })
+    if (
+      x < this.game.camera.x + this.game.camera.width &&
+      x  > this.game.camera.x &&
+      y < this.game.camera.y + this.game.camera.height &&
+      y > this.game.camera.y
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   attackAction() {
-    this.game.attackAudio.play();
+    if(this.inCamera()) {
+      this.game.attackAudio.play();
+    }
+
     this.attack.isAttacking = true;
     this.attack.animation = true;
     this.currentFrame = 0;
@@ -149,7 +166,9 @@ export default class Bot extends GameObject {
         this.kills += 1;
         this.increaseExp(Math.floor(enemy.exp > 30 ? enemy.exp / 3 : 10))
         if (enemy.id === this.game.player.id) {
-          this.game.deathAudio.play();
+          if(this.inCamera()) { 
+            this.game.deathAudio.play();
+          }
           this.game.deathAnimations.push(
             new DeathAnimation(enemy.x, enemy.y, this.game)
           );
@@ -158,7 +177,9 @@ export default class Bot extends GameObject {
             this.game.playAgainModal.classList.add("active");
           }, 2000);
         } else {
-          this.game.deathAudio.play();
+          if(this.inCamera()) { 
+            this.game.deathAudio.play();
+          }
           this.game.deathAnimations.push(
             new DeathAnimation(enemy.x, enemy.y, this.game)
           );
@@ -287,31 +308,16 @@ export default class Bot extends GameObject {
       this.attack.animation = false;
     }
 
-    // draw sword
-    if (!this.attack.animation) {
-      ctx.drawImage(
-        this.swordImage,
-        this.currentFrame * 58,
-        col * 29,
-        58,
-        29,
-        this.x - camera.x + (col == 0 ? -65 : -50),
-        this.y - camera.y - 80,
-        58 * 2,
-        29 * 2
-      );
-    }
-
     ctx.drawImage(
-      this.botImage,
-      this.currentFrame * 38,
-      col * 38,
-      38,
-      38,
-      this.x - camera.x - 38,
-      this.y - camera.y - 38,
-      38 * 2,
-      38 * 2
+      this.levels[this.level-1 === 0 ? 0 : 1].image,
+      this.currentFrame * 60,
+      col * 72,
+      60,
+      72,
+      this.x - camera.x - 60/2,
+      this.y - camera.y - 72/2,
+      60,
+      72
     );
 
     if (this.attack.animation) {
@@ -347,26 +353,26 @@ export default class Bot extends GameObject {
     // );
 
     // Target Area
-    ctx.beginPath();
-    ctx.arc(
-      this.x - camera.x,
-      this.y - camera.y,
-      this.targetRadius,
-      0,
-      2 * Math.PI
-    );
-    ctx.stroke();
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.x - camera.x,
+    //   this.y - camera.y,
+    //   this.targetRadius,
+    //   0,
+    //   2 * Math.PI
+    // );
+    // ctx.stroke();
 
-    // Attack Area
-    ctx.beginPath();
-    ctx.arc(
-      this.x - camera.x,
-      this.y - camera.y,
-      this.attackRadius,
-      0,
-      2 * Math.PI
-    );
-    ctx.stroke();
+    // // Attack Area
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.x - camera.x,
+    //   this.y - camera.y,
+    //   this.attackRadius,
+    //   0,
+    //   2 * Math.PI
+    // );
+    // ctx.stroke();
 
     this.pixelCanvas.drawName(
       ctx,

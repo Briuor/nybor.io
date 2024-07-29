@@ -33,6 +33,9 @@ export default class Game {
     this.attackAudio = new Howl({
       src: ['audio/attack.wav']
     })
+    this.levelUpAudio = new Howl({
+      src: ['audio/levelup.wav']
+    })
     var sound = new Howl({
       src: ['audio/battle.mp3'],
       autoplay: true,
@@ -206,7 +209,7 @@ export default class Game {
 
     $liList[len - 1].style.display = "none";
 
-    const sortedEntities = [...(this.player.isActive ? [this.player] : []), ...this.bots].sort(
+    const sortedEntities = [this.player, ...this.bots].sort(
       (a, b) => b.totalExp - a.totalExp
     );
 

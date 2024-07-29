@@ -22,8 +22,8 @@ export default class Player extends GameObject {
     this.damage = 20; // Damage dealt per attack
     this.attackRange = 65;
     this.impulse = { x: 0, y: 0, duration: 0 };
-    this.exp = 0;
-    this.totalExp = 0;
+    this.exp = 47;
+    this.totalExp = 47;
     this.expToNextLevel = 50;
     this.level = 1;
     this.maxLevel = 10;
@@ -31,12 +31,21 @@ export default class Player extends GameObject {
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
 
-    this.playerImage = null;
     this.swordImage = null;
     this.attackImage = null;
     this.currentFrame = 0;
     this.animationTime = Date.now();
     this.animationDuration = 150;
+
+    this.evolution = {
+      frontImage: null,
+      backImage: null,
+      frame: 0,
+      animation: false,
+      time: null,
+      duration: 100,
+      totalFrames: 7
+    };
 
     this.getHitAnimation = false;
     this.isActive = true;
@@ -59,7 +68,7 @@ export default class Player extends GameObject {
   }
 
   attackAction() {
-    if(!this.isActive) return ;
+    if (!this.isActive) return;
 
     this.game.attackAudio.play();
     this.attack.isAttacking = true;
@@ -90,17 +99,27 @@ export default class Player extends GameObject {
   }
 
   increaseExp(exp) {
-    this.exp += exp; 
+    this.exp += exp;
     this.totalExp += exp;
+    let leveledUp = false;
     console.log(`Adding ${exp} experience.`);
-    console.log(`Initial state: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`);
+    console.log(
+      `Initial state: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`
+    );
 
-    while(this.exp >= this.expToNextLevel && this.level < this.maxLevel) {
+    while (this.exp >= this.expToNextLevel && this.level < this.maxLevel) {
+      if(!leveledUp) {
+        this.startEvolutionAnimation();
+        this.game.levelUpAudio.play()
+        leveledUp = true;
+      }
       this.exp -= this.expToNextLevel;
       this.level += 1;
       this.expToNextLevel *= 2;
 
-      console.log(`Leveled up: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`);
+      console.log(
+        `Leveled up: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`
+      );
 
       if (this.level >= this.maxLevel) {
         this.exp = 0;
@@ -119,7 +138,7 @@ export default class Player extends GameObject {
   }
 
   update(dt) {
-    if(!this.isActive) return ;
+    if (!this.isActive) return;
 
     if (this.impulse.duration > 0) {
       const impulseX = this.impulse.x * dt;
@@ -158,7 +177,7 @@ export default class Player extends GameObject {
   }
 
   move(dt) {
-    if(!this.isActive) return ;
+    if (!this.isActive) return;
 
     const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
     const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
@@ -176,9 +195,14 @@ export default class Player extends GameObject {
       this.y = nextY;
     }
   }
+  
+  startEvolutionAnimation() {
+    this.evolution.time = Date.now();
+    this.evolution.animation = true;
+  }
 
   draw(ctx, camera) {
-    if(!this.isActive) return ;
+    if (!this.isActive) return;
 
     // ctx.fillStyle = this.color;
     // ctx.beginPath();
@@ -235,59 +259,86 @@ export default class Player extends GameObject {
       if (this.currentFrame >= totalFrames) {
         this.currentFrame = 0;
         this.attack.animation = false;
-        this.getHitAnimation = false;
       } else {
         this.currentFrame += 1;
       }
       this.animationTime = Date.now();
     }
 
-    // draw sword
-    if (!this.attack.animation) {
+    // evo animation
+    if (this.evolution.animation && (Date.now() - this.evolution.duration >= this.evolution.time)) {
+      if (this.evolution.frame >= this.evolution.totalFrames) {
+        this.evolution.frame = 0;
+        this.evolution.animation = false;
+      } else {
+        this.evolution.frame += 1;
+      }
+      this.evolution.time = Date.now();
+    }
+
+    // evo back
+    if (this.evolution.animation) {
       ctx.drawImage(
-        this.swordImage,
-        this.currentFrame * 58,
-        col * 29,
-        58,
-        29,
-        camera.width / 2 + (col == 0 ? -65 : -50),
-        camera.height / 2 - 80,
-        58 * 2,
-        29 * 2
+        this.evolution.backImage,
+        this.evolution.frame * 80,
+        0,
+        80,
+        92,
+        camera.width / 2 - 80 / 2,
+        camera.height / 2 - 92 / 2,
+        80,
+        92
       );
     }
 
+    // player
     ctx.drawImage(
-      this.playerImage,
-      this.currentFrame * 38,
-      col * 38,
-      38,
-      38,
-      camera.width / 2 - 38,
-      camera.height / 2 - 38,
-      38 * 2,
-      38 * 2
+      this.levels[this.level - 1 === 0 ? 0 : 1].image,
+      this.currentFrame * 60,
+      col * 72,
+      60,
+      72,
+      camera.width / 2 - 60 / 2,
+      camera.height / 2 - 72 / 2,
+      60,
+      72
     );
+
+    // evo front
+    if (this.evolution.animation) {
+      ctx.drawImage(
+        this.evolution.frontImage,
+        this.evolution.frame * 80,
+        0,
+        80,
+        92,
+        camera.width / 2 - 80 / 2,
+        camera.height / 2 - 92 / 2,
+        80,
+        92
+      );
+    }
+
     ctx.restore();
 
     if (!this.attack.animation) {
-    ctx.save();
-    ctx.translate(camera.width / 2, camera.height / 2);
-    ctx.rotate(this.directionAngle);
+      ctx.save();
+      ctx.translate(camera.width / 2, camera.height / 2);
+      ctx.rotate(this.directionAngle);
 
-    ctx.drawImage(
-      this.atkindicatorImage,
-      0,
-      0,
-      52,
-      76,
-      (-52 * 2 + 155) / 2, // offset by half image width
-      (-76 * 2) / 2, // offset by half image height
-      52 * 2,
-      76 * 2
-    );
-    ctx.restore();
-  }
+      ctx.drawImage(
+        this.atkindicatorImage,
+        0,
+        0,
+        52,
+        76,
+        (-52 * 2 + 155) / 2, // offset by half image width
+        (-76 * 2) / 2, // offset by half image height
+        52 * 2,
+        76 * 2
+      );
+      ctx.restore();
+    }
 
     if (this.attack.animation) {
       ctx.save();
@@ -315,7 +366,7 @@ export default class Player extends GameObject {
       100 - (elapsedTime / this.attack.duration) * 100,
       0
     );
-    ctx.fillStyle = "#f2ec8b";
+    ctx.fillStyle = "#fff9c9";
     ctx.fillRect(
       camera.width / 2 - 50,
       camera.height / 2 + 55,
