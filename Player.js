@@ -44,15 +44,38 @@ export default class Player extends GameObject {
       animation: false,
       time: null,
       duration: 100,
-      totalFrames: 7
+      totalFrames: 7,
     };
 
     this.getHitAnimation = false;
     this.isActive = true;
 
+    this.baseSpeed = 120; // Base speed
+    this.boostedSpeed = 240; // Boosted speed
+    this.isBoosting = false; // Boost state
+
     // Bind the this context for the event listener
     document.addEventListener("mousemove", this.handleMouseMove.bind(this));
-    document.addEventListener("click", this.handleClick.bind(this));
+    document.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    document.addEventListener("mouseup", this.handleMouseUp.bind(this));
+  }
+
+  handleMouseDown(e) {
+    if (e.button === 0 && !this.attack.isAttacking) {
+      this.attackAction();
+    } 
+    if (e.button === 2) {
+      if (!this.isBoosting && this.exp > 0) {
+        // 1% chance per update to start boosting
+        this.isBoosting = true;
+      }
+    }
+  }
+
+  handleMouseUp(e) {
+    if (e.button === 2) {
+      this.isBoosting = false;
+    }
   }
 
   handleMouseMove(e) {
@@ -108,9 +131,9 @@ export default class Player extends GameObject {
     );
 
     while (this.exp >= this.expToNextLevel && this.level < this.maxLevel) {
-      if(!leveledUp) {
+      if (!leveledUp) {
         this.startEvolutionAnimation();
-        this.game.levelUpAudio.play()
+        this.game.levelUpAudio.play();
         leveledUp = true;
       }
       this.exp -= this.expToNextLevel;
@@ -129,12 +152,6 @@ export default class Player extends GameObject {
         break;
       }
     }
-  }
-
-  handleClick() {
-    if (this.attack.isAttacking) return;
-
-    this.attackAction();
   }
 
   update(dt) {
@@ -179,8 +196,18 @@ export default class Player extends GameObject {
   move(dt) {
     if (!this.isActive) return;
 
-    const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
-    const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
+    let currentSpeed = this.isBoosting ? this.boostedSpeed : this.baseSpeed;
+    if (this.isBoosting) {
+      this.exp -= dt * 10; // Consume 10 exp per second during boost
+      this.totalExp -= dt * 10;
+      if (this.exp <= 0) {
+        this.exp = 0;
+        this.isBoosting = false;
+      }
+    }
+
+    const nextX = this.x + Math.cos(this.directionAngle) * currentSpeed * dt;
+    const nextY = this.y + Math.sin(this.directionAngle) * currentSpeed * dt;
 
     let willCollide = false;
 
@@ -195,7 +222,7 @@ export default class Player extends GameObject {
       this.y = nextY;
     }
   }
-  
+
   startEvolutionAnimation() {
     this.evolution.time = Date.now();
     this.evolution.animation = true;
@@ -266,7 +293,10 @@ export default class Player extends GameObject {
     }
 
     // evo animation
-    if (this.evolution.animation && (Date.now() - this.evolution.duration >= this.evolution.time)) {
+    if (
+      this.evolution.animation &&
+      Date.now() - this.evolution.duration >= this.evolution.time
+    ) {
       if (this.evolution.frame >= this.evolution.totalFrames) {
         this.evolution.frame = 0;
         this.evolution.animation = false;

@@ -8,7 +8,6 @@ export default class Bot extends GameObject {
     super(x, y, 32, "red");
     this.id = id;
     this.name = name;
-    this.speed = 120;
     this.game = game;
     this.x = x;
     this.y = y;
@@ -52,16 +51,32 @@ export default class Bot extends GameObject {
     this.animationDuration = 100;
 
     this.type = "bot";
+    this.baseSpeed = 120; // Base speed
+    this.boostedSpeed = 240; // Boosted speed
+    this.isBoosting = false; // Boost state
+    this.boostDuration = 0; // Boost duration in milliseconds
+    this.boostCooldown = 5000; // Cooldown before another boost can occur
+    this.lastBoostTime = 0; // Last time boost was activated
   }
 
   move(dt) {
+    let currentSpeed = this.isBoosting ? this.boostedSpeed : this.baseSpeed;
+    if (this.isBoosting) {
+      this.exp -= dt * 10; // Consume 10 exp per second during boost
+      this.totalExp -= Math.round(dt * 10);
+      if (this.exp <= 0) {
+        this.exp = 0;
+        this.isBoosting = false;
+      }
+    }
+
     if (this.target) {
       this.directionAngle = Math.atan2(
         this.target.y - this.y,
         this.target.x - this.x
       );
-      const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
-      const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
+      const nextX = this.x + Math.cos(this.directionAngle) * currentSpeed * dt;
+      const nextY = this.y + Math.sin(this.directionAngle) * currentSpeed * dt;
 
       if (this.game.map.isWalkable(nextX, nextY)) {
         this.x = nextX;
@@ -72,8 +87,8 @@ export default class Bot extends GameObject {
         this.nextDirectionPoint.y - this.y,
         this.nextDirectionPoint.x - this.x
       );
-      const nextX = this.x + Math.cos(this.directionAngle) * this.speed * dt;
-      const nextY = this.y + Math.sin(this.directionAngle) * this.speed * dt;
+      const nextX = this.x + Math.cos(this.directionAngle) * currentSpeed * dt;
+      const nextY = this.y + Math.sin(this.directionAngle) * currentSpeed * dt;
 
       if (this.game.map.isWalkable(nextX, nextY)) {
         this.x = nextX;
@@ -95,7 +110,6 @@ export default class Bot extends GameObject {
   checkTargetAreaCollision = (entities) => {
     let near = { entity: null, dist: Infinity };
     for (let entity of entities) {
-
       const dist = Math.sqrt(
         Math.pow(entity.x - this.x, 2) + Math.pow(entity.y - this.y, 2)
       );
@@ -107,29 +121,27 @@ export default class Bot extends GameObject {
     return near.entity;
   };
 
-
   findTargetToChase() {
     const enemies = [
       ...(this.game.player.isActive ? [this.game.player] : []),
       ...this.game.bots.filter((bot) => bot.id !== this.id),
-    ]
+    ];
 
     const nearEnemy = this.checkTargetAreaCollision(enemies);
-    if(nearEnemy) return nearEnemy;
+    if (nearEnemy) return nearEnemy;
 
     const nearOrb = this.checkTargetAreaCollision(this.game.orbs);
-    if(nearOrb) return nearOrb;
-
+    if (nearOrb) return nearOrb;
   }
 
   // check if the bot is in the camera area to play a sound
   inCamera() {
-    const x = this.x ;
-    const y = this.y ;
-    console.log({x, y, cx: this.game.camera.x, cy: this.game.camera.y, })
+    const x = this.x;
+    const y = this.y;
+    console.log({ x, y, cx: this.game.camera.x, cy: this.game.camera.y });
     if (
       x < this.game.camera.x + this.game.camera.width &&
-      x  > this.game.camera.x &&
+      x > this.game.camera.x &&
       y < this.game.camera.y + this.game.camera.height &&
       y > this.game.camera.y
     ) {
@@ -139,7 +151,7 @@ export default class Bot extends GameObject {
   }
 
   attackAction() {
-    if(this.inCamera()) {
+    if (this.inCamera()) {
       this.game.attackAudio.play();
     }
 
@@ -164,9 +176,9 @@ export default class Bot extends GameObject {
 
       if (dist <= this.attackRange + enemy.radius) {
         this.kills += 1;
-        this.increaseExp(Math.floor(enemy.exp > 30 ? enemy.exp / 3 : 10))
+        this.increaseExp(Math.floor(enemy.exp > 30 ? enemy.exp / 3 : 10));
         if (enemy.id === this.game.player.id) {
-          if(this.inCamera()) { 
+          if (this.inCamera()) {
             this.game.deathAudio.play();
           }
           this.game.deathAnimations.push(
@@ -177,7 +189,7 @@ export default class Bot extends GameObject {
             this.game.playAgainModal.classList.add("active");
           }, 2000);
         } else {
-          if(this.inCamera()) { 
+          if (this.inCamera()) {
             this.game.deathAudio.play();
           }
           this.game.deathAnimations.push(
@@ -192,22 +204,39 @@ export default class Bot extends GameObject {
   }
 
   increaseExp(exp) {
-    this.exp += exp; 
+    this.exp += exp;
     this.totalExp += exp;
 
-    while(this.exp >= this.expToNextLevel) {
+    while (this.exp >= this.expToNextLevel) {
       this.level += 1;
       this.exp = this.exp % this.expToNextLevel;
       this.expToNextLevel *= 2;
     }
 
-    if(this.level >= this.maxLevel) {
-      this.exp = 0
+    if (this.level >= this.maxLevel) {
+      this.exp = 0;
       this.level = maxLevel;
-    };
+    }
   }
 
   update(dt) {
+    if (
+      !this.isBoosting &&
+      Date.now() - this.lastBoostTime > this.boostCooldown &&
+      this.exp > 0
+    ) {
+      if (Math.random() < 0.05) {
+        // 1% chance per update to start boosting
+        this.isBoosting = true;
+        this.lastBoostTime = Date.now();
+        this.boostDuration = Math.random() * 2000 + 1000; // Random duration between 1 to 3 seconds
+
+        setTimeout(() => {
+          this.isBoosting = false;
+        }, this.boostDuration);
+      }
+    }
+
     for (let i = 0; i < this.game.orbs.length; i++) {
       let orb = this.game.orbs[i];
       if (
@@ -309,13 +338,13 @@ export default class Bot extends GameObject {
     }
 
     ctx.drawImage(
-      this.levels[this.level-1 === 0 ? 0 : 1].image,
+      this.levels[this.level - 1 === 0 ? 0 : 1].image,
       this.currentFrame * 60,
       col * 72,
       60,
       72,
-      this.x - camera.x - 60/2,
-      this.y - camera.y - 72/2,
+      this.x - camera.x - 60 / 2,
+      this.y - camera.y - 72 / 2,
       60,
       72
     );

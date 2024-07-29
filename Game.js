@@ -47,7 +47,7 @@ export default class Game {
   static EXP_TO_LEVEL_10 = 2750
 
   generateRandomGame() {
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 200; i++) {
       this.orbs.push(
         new Orb(
           Math.floor(Math.random() * 999) + 1,
@@ -179,7 +179,7 @@ export default class Game {
     }
 
     // spawn bots every 5 seconds
-    if (now - this.lastSpawnOrbs >= 1000) {
+    if (now - this.lastSpawnOrbs >= 500) {
       this.orbs.push(
         new Orb(
           Math.floor(Math.random() * 999) + 1,
