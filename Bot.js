@@ -12,7 +12,6 @@ export default class Bot extends GameObject {
     this.x = x;
     this.y = y;
     this.directionAngle = 0;
-    this.targetRadius = 250;
     this.target = null;
     this.health = 50;
     this.maxHealth = 50;
@@ -25,7 +24,8 @@ export default class Bot extends GameObject {
       animation: false,
       angle: 0,
     };
-    this.attackRadius = 170;
+    this.targetRadius = Math.random() * 500 + 250;
+    this.attackRadius = Math.random() * 170 + 150; // 170 is ok
     this.attackRange = 65;
     this.nextDirectionPoint = {
       x: this.game.map.randomPositionX(),
@@ -38,11 +38,14 @@ export default class Bot extends GameObject {
     this.expToNextLevel = 50;
     this.totalExp = 0;
     this.level = 1;
-    this.increaseExp(exp);
-    this.maxLevel = 10;
+    this.maxLevel = 5;
     this.levels = [
-      { image: game.loader.getImage("level1") },
-      { image: game.loader.getImage("level2") },
+      { image: game.loader.getImage("level1"), width: 60, height: 72 },
+      { image: game.loader.getImage("level2"), width: 60, height: 72 },
+      { image: game.loader.getImage("level3"), width: 60, height: 72 },
+      { image: game.loader.getImage("level4"), width: 60, height: 72 },
+      { image: game.loader.getImage("level5"), width: 69, height: 84 },
+
     ];
     this.swordImage = game.loader.getImage("sc");
     this.attackImage = game.loader.getImage("atk");
@@ -51,16 +54,18 @@ export default class Bot extends GameObject {
     this.animationDuration = 100;
 
     this.type = "bot";
-    this.baseSpeed = 120; // Base speed
-    this.boostedSpeed = 240; // Boosted speed
+    this.baseSpeed = 160; // Base speed
+    this.boostedSpeed = 100; // Boosted speed
     this.isBoosting = false; // Boost state
     this.boostDuration = 0; // Boost duration in milliseconds
     this.boostCooldown = 5000; // Cooldown before another boost can occur
     this.lastBoostTime = 0; // Last time boost was activated
+    this.increaseExp(exp);
+
   }
 
   move(dt) {
-    let currentSpeed = this.isBoosting ? this.boostedSpeed : this.baseSpeed;
+    let currentSpeed = this.isBoosting ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
     if (this.isBoosting) {
       this.exp -= dt * 10; // Consume 10 exp per second during boost
       this.totalExp -= Math.round(dt * 10);
@@ -203,19 +208,31 @@ export default class Bot extends GameObject {
     }
   }
 
+  startEvolutionAnimation() {
+    this.evolution.time = Date.now();
+    this.evolution.animation = true;
+  }
+
   increaseExp(exp) {
     this.exp += exp;
     this.totalExp += exp;
+    let leveledUp = false;
 
-    while (this.exp >= this.expToNextLevel) {
+    while (this.exp >= this.expToNextLevel && this.level < this.maxLevel) {
+      if (!leveledUp) {
+        // this.startEvolutionAnimation();
+        leveledUp = true;
+      }
+      this.exp -= this.expToNextLevel;
       this.level += 1;
-      this.exp = this.exp % this.expToNextLevel;
       this.expToNextLevel *= 2;
-    }
+      this.baseSpeed += 25;
 
-    if (this.level >= this.maxLevel) {
-      this.exp = 0;
-      this.level = maxLevel;
+      if (this.level >= this.maxLevel) {
+        this.exp = 0;
+        this.level = this.maxLevel;
+        break;
+      }
     }
   }
 
@@ -225,7 +242,7 @@ export default class Bot extends GameObject {
       Date.now() - this.lastBoostTime > this.boostCooldown &&
       this.exp > 0
     ) {
-      if (Math.random() < 0.05) {
+      if (Math.random() < 0.01) {
         // 1% chance per update to start boosting
         this.isBoosting = true;
         this.lastBoostTime = Date.now();
@@ -337,16 +354,18 @@ export default class Bot extends GameObject {
       this.attack.animation = false;
     }
 
+    const width = this.levels[this.level - 1].width;
+    const height = this.levels[this.level - 1].height;
     ctx.drawImage(
-      this.levels[this.level - 1 === 0 ? 0 : 1].image,
-      this.currentFrame * 60,
-      col * 72,
-      60,
-      72,
-      this.x - camera.x - 60 / 2,
-      this.y - camera.y - 72 / 2,
-      60,
-      72
+      this.levels[this.level - 1].image,
+      this.currentFrame * width,
+      col * height,
+      width,
+      height,
+      this.x - camera.x - width / 2,
+      this.y - camera.y - height / 2,
+      width,
+      height,
     );
 
     if (this.attack.animation) {
@@ -370,44 +389,33 @@ export default class Bot extends GameObject {
       ctx.restore();
     }
 
-    // Draw health bar
-    // ctx.fillStyle = "red";
-    // ctx.fillRect(this.x - camera.x - 50, this.y - camera.y + 55, 100, 10);
-    // ctx.fillStyle = "green";
-    // ctx.fillRect(
-    //   this.x - camera.x - 50,
-    //   this.y - camera.y + 55,
-    //   (this.health / this.maxHealth) * 100,
-    //   10
-    // );
-
     // Target Area
-    // ctx.beginPath();
-    // ctx.arc(
-    //   this.x - camera.x,
-    //   this.y - camera.y,
-    //   this.targetRadius,
-    //   0,
-    //   2 * Math.PI
-    // );
-    // ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(
+      this.x - camera.x,
+      this.y - camera.y,
+      this.targetRadius,
+      0,
+      2 * Math.PI
+    );
+    ctx.stroke();
 
-    // // Attack Area
-    // ctx.beginPath();
-    // ctx.arc(
-    //   this.x - camera.x,
-    //   this.y - camera.y,
-    //   this.attackRadius,
-    //   0,
-    //   2 * Math.PI
-    // );
-    // ctx.stroke();
+    // Attack Area
+    ctx.beginPath();
+    ctx.arc(
+      this.x - camera.x,
+      this.y - camera.y,
+      this.attackRadius,
+      0,
+      2 * Math.PI
+    );
+    ctx.stroke();
 
     this.pixelCanvas.drawName(
       ctx,
       this.name,
       1.5,
-      Math.floor(this.x - camera.x - 5 - this.name.length * 2),
+      Math.floor(this.x - camera.x - this.name.length *1.5* 2),
       this.y - camera.y + 40
     );
   }

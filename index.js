@@ -20,6 +20,9 @@ $play.addEventListener("click", () => {
   Promise.all([
     loader.loadImage("level1", "images/level1.png"),
     loader.loadImage("level2", "images/level2.png"),
+    loader.loadImage("level3", "images/level3.png"),
+    loader.loadImage("level4", "images/level4.png"),
+    loader.loadImage("level5", "images/level5.png"),
     loader.loadImage("sc", "images/sc.png"),
     loader.loadImage("atk", "images/atk.png"),
     loader.loadImage("atkindicator", "images/atkindicator.png"),
@@ -31,8 +34,11 @@ $play.addEventListener("click", () => {
   ]).then((res) => {
     const game = new Game(loader);
     game.player.levels = [
-      { image: loader.getImage("level1") },
-      { image: loader.getImage("level2") },
+      { image: loader.getImage("level1"), width: 60, height: 72},
+      { image: loader.getImage("level2"), width: 60, height: 72 },
+      { image: loader.getImage("level3"), width: 60, height: 72 },
+      { image: loader.getImage("level4"), width: 60, height: 72 },
+      { image: loader.getImage("level5"), width: 69, height: 84 },
     ];
     game.player.swordImage = loader.getImage("sc");
     game.player.attackImage = loader.getImage("atk");

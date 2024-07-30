@@ -7,7 +7,6 @@ export default class Player extends GameObject {
     super(x, y, 32, "white");
     this.name = name;
     this.id = id;
-    this.speed = 180;
     this.directionAngle = 0;
     this.attack = {
       duration: 450, // ms
@@ -26,7 +25,7 @@ export default class Player extends GameObject {
     this.totalExp = 47;
     this.expToNextLevel = 50;
     this.level = 1;
-    this.maxLevel = 10;
+    this.maxLevel = 5;
 
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
@@ -50,8 +49,8 @@ export default class Player extends GameObject {
     this.getHitAnimation = false;
     this.isActive = true;
 
-    this.baseSpeed = 120; // Base speed
-    this.boostedSpeed = 240; // Boosted speed
+    this.baseSpeed = 160; // Base speed
+    this.boostedSpeed = 100; // Boosted speed
     this.isBoosting = false; // Boost state
 
     // Bind the this context for the event listener
@@ -125,10 +124,6 @@ export default class Player extends GameObject {
     this.exp += exp;
     this.totalExp += exp;
     let leveledUp = false;
-    console.log(`Adding ${exp} experience.`);
-    console.log(
-      `Initial state: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`
-    );
 
     while (this.exp >= this.expToNextLevel && this.level < this.maxLevel) {
       if (!leveledUp) {
@@ -139,15 +134,11 @@ export default class Player extends GameObject {
       this.exp -= this.expToNextLevel;
       this.level += 1;
       this.expToNextLevel *= 2;
-
-      console.log(
-        `Leveled up: level=${this.level}, exp=${this.exp}, expToNextLevel=${this.expToNextLevel}`
-      );
+      this.baseSpeed += 25;
 
       if (this.level >= this.maxLevel) {
         this.exp = 0;
         this.level = this.maxLevel;
-        console.log(`Max level reached: level=${this.level}, exp=${this.exp}`);
 
         break;
       }
@@ -196,7 +187,7 @@ export default class Player extends GameObject {
   move(dt) {
     if (!this.isActive) return;
 
-    let currentSpeed = this.isBoosting ? this.boostedSpeed : this.baseSpeed;
+    let currentSpeed = this.isBoosting ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
     if (this.isBoosting) {
       this.exp -= dt * 10; // Consume 10 exp per second during boost
       this.totalExp -= dt * 10;
@@ -319,11 +310,24 @@ export default class Player extends GameObject {
         80,
         92
       );
-    }
+    } 
 
     // player
+    const width = this.levels[this.level - 1].width;
+    const height = this.levels[this.level - 1].height;
     ctx.drawImage(
-      this.levels[this.level - 1 === 0 ? 0 : 1].image,
+      this.levels[this.level - 1].image,
+      this.currentFrame * width,
+      col * height,
+      width,
+      height,
+      this.x - camera.x - width / 2,
+      this.y - camera.y - height / 2,
+      width,
+      height,
+    );
+    ctx.drawImage(
+      this.levels[this.level - 1].image,
       this.currentFrame * 60,
       col * 72,
       60,
@@ -408,7 +412,7 @@ export default class Player extends GameObject {
       ctx,
       this.name,
       1.5,
-      Math.floor(camera.width / 2 - this.name.length * 2) - 5,
+      Math.floor(camera.width / 2 - this.name.length*1.5*2),
       Math.floor(camera.height / 2) + 40
     );
   }
