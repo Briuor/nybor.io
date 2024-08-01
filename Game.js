@@ -14,7 +14,6 @@ export default class Game {
     this.deathAnimations = []
     this.lastSpawn = Date.now();
     this.lastSpawnOrbs = Date.now();
-    this.camera = new Camera(this.canvas);
 
     this.orbs = [];
     this.bots = [];
@@ -28,17 +27,22 @@ export default class Game {
     this.endKills = document.getElementById("end-kills");
     this.endExp = document.getElementById("end-exp");
 
+    this.width = 1920;
+    this.height = 1080;
+    this.canvasWidth = 1920;
+    this.canvasHeight = 1080;
+
     window.addEventListener("resize", this.resizeCanvas.bind(this));
     this.resizeCanvas();
     this.deathAudio = sounds["deathAudio"];
     this.attackAudio = sounds["attackAudio"];
     this.levelUpAudio = sounds["levelUpAudio"];
     this.getOrbAudio = sounds["getOrbAudio"];
+    this.camera = new Camera(this.canvas, this);
     
     var battleAudio = sounds["battleAudio"];
     battleAudio.play();
     this.save = JSON.parse(localStorage.getItem("save")) ?? {kills: 0, exp: 0};
-    console.log(this.save)
   }
 
   static EXP_TO_LEVEL_10 = 2750
@@ -68,8 +72,6 @@ export default class Game {
         )
       );
     }
-
-    
   
     this.player = new Player(
       0,
@@ -119,13 +121,24 @@ export default class Game {
   }
 
   resizeCanvas() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
+    this.canvasWidth = window.innerWidth - 4;
+    this.canvasHeight = window.innerHeight - 4;
+    this.ctx.mozImageSmoothingEnabled = false;
+    this.ctx.webkitImageSmoothingEnabled = false;
+    this.ctx.msImageSmoothingEnabled = false;
+    this.ctx.imageSmoothingEnabled = false;
+
+
+    this.canvas.style.width = this.canvasWidth + "px";
+    this.canvas.style.height = this.canvasHeight + "px";
   }
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.camera.render(this.ctx, this.map);
+    
     this.deathAnimations.map((d) => {
       d.draw(this.ctx, this.camera);
     });
@@ -142,10 +155,10 @@ export default class Game {
     level.innerText = this.player.level;
     const expPercentage = (this.player.exp / this.player.expToNextLevel) * 100;
     expBar.style.width = expPercentage + "%";
+
   }
 
   update() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     let now = Date.now();
     let dt = (now - this.lastUpdate) / 1000;
     this.lastUpdate = now;

@@ -78,11 +78,11 @@ export default class Player extends GameObject {
     const x =
       e.clientX -
       this.game.canvas.getBoundingClientRect().left -
-      this.game.camera.width / 2;
+      window.innerWidth / 2;
     const y =
       e.clientY -
       this.game.canvas.getBoundingClientRect().top -
-      this.game.camera.height / 2;
+      window.innerHeight / 2;
     this.directionAngle = Math.atan2(y, x);
   }
 

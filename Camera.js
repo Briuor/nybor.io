@@ -26,8 +26,9 @@ class Animator {
 }
 
 export default class Camera {
-  constructor(canvas) {
+  constructor(canvas, game) {
     this.canvas = canvas;
+    this.game = game;
     this.animations = {
       22: new Animator([22, 23, 24, 25, 26, 38], 16),
       28: new Animator([29, 30, 31, 32, 38, 28], 16),
@@ -38,8 +39,8 @@ export default class Camera {
   }
 
   updateDimensions() {
-    this.width = window.innerWidth;
-    this.height = window.innerHeight;
+    this.width = this.game.width;
+    this.height = this.game.height;
   }
 
   update(player) {
@@ -51,6 +52,7 @@ export default class Camera {
   
   render(ctx, map) {
     // start end
+    
     const startCol = Math.floor(this.x / Map.TILE_SIZE);
     const startRow = Math.floor(this.y / Map.TILE_SIZE);
     const endCol = startCol + this.width / Map.TILE_SIZE + 1;

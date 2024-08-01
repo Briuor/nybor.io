@@ -10,7 +10,21 @@
     />
     <link rel="stylesheet" href="./index.css" />
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F3RRJ1PPHK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-F3RRJ1PPHK');
+    </script>
+    
+    <!-- Ad sense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7619410281566670"
+    crossorigin="anonymous"></script>
   </head>
+
   <body oncontextmenu="return false;">
     <script type="module" src="./GameObject.js"></script>
     <script type="module" src="./Game.js"></script>
@@ -97,7 +111,7 @@
           <p class="title">How to Play</p>
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
             <img src="/images/mouseleft.png" width="50" style="margin-right: 15px; " />
-            <span>Move the mouse to direct<br /> the character</span> 
+            <span>Move the mouse to direct</span> 
           </div>
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
             <img src="/images/mousel.png" width="50" style="margin-right: 15px;" />
@@ -154,5 +168,8 @@
         </form>
       </div>
     </div>
+    <!-- <iframe src="http://localhost:5500" width="900" height="500">
+      <p>Your browser does not support iframes.</p>
+    </iframe> -->
   </body>
 </html>
