@@ -6,7 +6,7 @@ import Orb from "./Orb.js";
 import { randomName } from "./util.js";
 
 export default class Game {
-  constructor(loader) {
+  constructor(loader, sounds) {
     this.loader = loader;
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
@@ -24,27 +24,37 @@ export default class Game {
     this.leaderBoardWrapper = document.getElementById("leaderboard-wrapper");
     this.leaderBoard = document.getElementById("leaderboard");
     this.playAgainModal = document.getElementById("play-again-modal");
+    this.killsCounterEl = document.getElementById("kills");
+    this.endKills = document.getElementById("end-kills");
+    this.endExp = document.getElementById("end-exp");
 
     window.addEventListener("resize", this.resizeCanvas.bind(this));
     this.resizeCanvas();
-    this.deathAudio = new Howl({
-      src: ['audio/death.wav']
-    })
-    this.attackAudio = new Howl({
-      src: ['audio/attack.wav']
-    })
-    this.levelUpAudio = new Howl({
-      src: ['audio/levelup.wav']
-    })
-    var sound = new Howl({
-      src: ['audio/battle.mp3'],
-      autoplay: true,
-      loop: true,
-    });
-    sound.play()
+    this.deathAudio = sounds["deathAudio"];
+    this.attackAudio = sounds["attackAudio"];
+    this.levelUpAudio = sounds["levelUpAudio"];
+    this.getOrbAudio = sounds["getOrbAudio"];
+    
+    var battleAudio = sounds["battleAudio"];
+    battleAudio.play();
+    this.save = JSON.parse(localStorage.getItem("save")) ?? {kills: 0, exp: 0};
+    console.log(this.save)
   }
 
   static EXP_TO_LEVEL_10 = 2750
+
+  getExpForLevel(level) {
+    let exp = 0;
+    for (let i = 1; i < level; i++) {
+      exp += Math.floor(100 * Math.pow(1.5, i - 1));
+    }
+    return exp;
+  }
+  
+  // Function to generate a random level between 1 and 10
+  getRandomLevel() {
+    return Math.floor(Math.random() * 9) + 1;
+  }
 
   generateRandomGame() {
     for (let i = 0; i < 200; i++) {
@@ -58,17 +68,19 @@ export default class Game {
         )
       );
     }
+
+    
   
     this.player = new Player(
       0,
       "Bruno",
       this.map.randomPositionX(),
       this.map.randomPositionY(),
-      Math.floor(Math.random() * Game.EXP_TO_LEVEL_10),
+      0,
       this
     );
   
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 200; i++) {
       const randomX = this.map.randomPositionX();
       const randomY = this.map.randomPositionY();
   
@@ -91,14 +103,15 @@ export default class Game {
       }
 
       if(!spawn) continue;
-  
+      const randomLevel = this.getRandomLevel();
+      const randomExp = this.getExpForLevel(randomLevel);
       this.bots.push(
         new Bot(
           Math.floor(Math.random() * 9999) + 1,
           randomName(),
           randomX,
           randomY,
-          Math.floor(Math.random() * Game.EXP_TO_LEVEL_10),
+          randomExp,
           this
         )
       );
@@ -129,8 +142,6 @@ export default class Game {
     level.innerText = this.player.level;
     const expPercentage = (this.player.exp / this.player.expToNextLevel) * 100;
     expBar.style.width = expPercentage + "%";
-
-    
   }
 
   update() {
@@ -144,7 +155,7 @@ export default class Game {
     // check if has any entity there
     // if not spawn
     // else don't spawn and generate another coordinate
-    if (now - this.lastSpawn >= 2000) {
+    if (now - this.lastSpawn >= 400) {
       let shouldSpawn = true;
       const randomX = this.map.randomPositionX();
       const randomY = this.map.randomPositionY();
@@ -169,7 +180,7 @@ export default class Game {
             randomName(),
             randomX,
             randomY,
-            Math.floor(Math.random() * Game.EXP_TO_LEVEL_10),
+            0,
             this
           )
         );
@@ -179,7 +190,7 @@ export default class Game {
     }
 
     // spawn bots every 5 seconds
-    if (now - this.lastSpawnOrbs >= 500) {
+    if (now - this.lastSpawnOrbs >= 100) {
       this.orbs.push(
         new Orb(
           Math.floor(Math.random() * 999) + 1,
@@ -227,14 +238,14 @@ export default class Game {
           $liList[len - 1].style.display = "block";
           const playerPosition = sortedEntities.findIndex((entity) =>entity.id === this.player.id);
           $nameEl.innerText = (playerPosition + 1) + "." + this.player.name;
-          $expEl.innerText = this.player.totalExp;
+          $expEl.innerText = Math.round(this.player.totalExp);
           $liList[i].style.backgroundColor = "rgba(25, 25, 25, 0.8)";
           return;
         }
         $liList[i].style.backgroundColor = entity.id === this.player.id ? "rgba(25, 25, 25, 0.8)" : "rgba(0, 0, 0, 0.8)";
 
         $nameEl.innerText = (i + 1) + "." + entity.name;
-        $expEl.innerText = entity.totalExp;
+        $expEl.innerText = Math.round(entity.totalExp);
       } else {
         $nameEl.innerText = (i + 1) + ".-";
         $expEl.innerText = "-";

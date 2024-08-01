@@ -25,7 +25,7 @@ export default class Player extends GameObject {
     this.totalExp = 47;
     this.expToNextLevel = 50;
     this.level = 1;
-    this.maxLevel = 5;
+    this.maxLevel = 10;
 
     this.pixelCanvas = new pixelCanvas();
     this.kills = 0;
@@ -64,10 +64,7 @@ export default class Player extends GameObject {
       this.attackAction();
     } 
     if (e.button === 2) {
-      if (!this.isBoosting && this.exp > 0) {
-        // 1% chance per update to start boosting
         this.isBoosting = true;
-      }
     }
   }
 
@@ -115,7 +112,9 @@ export default class Player extends GameObject {
           new DeathAnimation(bot.x, bot.y, this.game)
         );
         this.kills += 1;
-        this.increaseExp(Math.floor(bot.exp > 30 ? bot.exp / 3 : 10));
+        this.game.killsCounterEl.innerText = this.kills;
+        console.log(bot.exp)
+        this.increaseExp(Math.floor(bot.exp > 30 ? bot.exp / 2 : 10));
       }
     }
   }
@@ -133,7 +132,7 @@ export default class Player extends GameObject {
       }
       this.exp -= this.expToNextLevel;
       this.level += 1;
-      this.expToNextLevel *= 2;
+      this.expToNextLevel *= 1.5;
       this.baseSpeed += 25;
 
       if (this.level >= this.maxLevel) {
@@ -171,6 +170,7 @@ export default class Player extends GameObject {
         Math.pow(this.x - orb.x, 2) + Math.pow(this.y - orb.y, 2)
       );
       if (dist < this.radius + orb.radius) {
+        this.game.getOrbAudio.play();
         this.increaseExp(orb.exp);
         this.game.orbs = this.game.orbs.filter((o) => o.id !== orb.id);
       }
@@ -187,13 +187,12 @@ export default class Player extends GameObject {
   move(dt) {
     if (!this.isActive) return;
 
-    let currentSpeed = this.isBoosting ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
-    if (this.isBoosting) {
-      this.exp -= dt * 10; // Consume 10 exp per second during boost
-      this.totalExp -= dt * 10;
+    let currentSpeed = this.isBoosting && this.exp > 0 ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
+    if (this.isBoosting && this.exp > 0) {
+      this.exp -= dt * 5;
+      this.totalExp -= dt * 5;
       if (this.exp <= 0) {
         this.exp = 0;
-        this.isBoosting = false;
       }
     }
 
@@ -326,17 +325,7 @@ export default class Player extends GameObject {
       width,
       height,
     );
-    ctx.drawImage(
-      this.levels[this.level - 1].image,
-      this.currentFrame * 60,
-      col * 72,
-      60,
-      72,
-      camera.width / 2 - 60 / 2,
-      camera.height / 2 - 72 / 2,
-      60,
-      72
-    );
+    
 
     // evo front
     if (this.evolution.animation) {

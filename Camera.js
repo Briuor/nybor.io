@@ -60,17 +60,13 @@ export default class Camera {
     for (let row = startRow; row <= endRow; row++) {
     for (let col = startCol; col <= endCol; col++) {
         if(col < 0 || row < 0 || col >= map.getTilesCols || row >= map.getTilesRows) {
-          ctx.drawImage(
-            map.tilesetImage,
-            1,
-            0,
-            Map.TILE_SIZE,
-            Map.TILE_SIZE,
-            Math.round((col -startCol) * Map.TILE_SIZE + offsetX),
-            Math.round((row -startRow) * Map.TILE_SIZE + offsetY),
-            Map.TILE_SIZE,
-            Map.TILE_SIZE
-          );
+          ctx.fillStyle = "#2d7074";
+          ctx.fillRect(
+              Math.round((col -startCol) * Map.TILE_SIZE + offsetX),
+              Math.round((row -startRow) * Map.TILE_SIZE + offsetY),
+              Map.TILE_SIZE,
+              Map.TILE_SIZE
+            );
           continue;
         }
         ctx.drawImage(

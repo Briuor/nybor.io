@@ -38,14 +38,18 @@ export default class Bot extends GameObject {
     this.expToNextLevel = 50;
     this.totalExp = 0;
     this.level = 1;
-    this.maxLevel = 5;
+    this.maxLevel = 10;
     this.levels = [
-      { image: game.loader.getImage("level1"), width: 60, height: 72 },
-      { image: game.loader.getImage("level2"), width: 60, height: 72 },
-      { image: game.loader.getImage("level3"), width: 60, height: 72 },
-      { image: game.loader.getImage("level4"), width: 60, height: 72 },
-      { image: game.loader.getImage("level5"), width: 69, height: 84 },
-
+      { image: game.loader.getImage("human"), width: 60, height: 72 },
+      { image: game.loader.getImage("viking"), width: 60, height: 72 },
+      { image: game.loader.getImage("rogue"), width: 60, height: 72 },
+      { image: game.loader.getImage("bard"), width: 62.5, height: 72 },
+      { image: game.loader.getImage("soldier"), width: 60, height: 72 },
+      { image: game.loader.getImage("mage"), width: 63, height: 78 },
+      { image: game.loader.getImage("ninja"), width: 60, height: 72 },
+      { image: game.loader.getImage("samurai"), width: 66, height: 72 },
+      { image: game.loader.getImage("soldierarmor"), width: 69, height: 84 },
+      { image: game.loader.getImage("golden"), width: 69, height: 82 },
     ];
     this.swordImage = game.loader.getImage("sc");
     this.attackImage = game.loader.getImage("atk");
@@ -67,8 +71,8 @@ export default class Bot extends GameObject {
   move(dt) {
     let currentSpeed = this.isBoosting ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
     if (this.isBoosting) {
-      this.exp -= dt * 10; // Consume 10 exp per second during boost
-      this.totalExp -= Math.round(dt * 10);
+      this.exp -= dt * 5; // Consume 10 exp per second during boost
+      this.totalExp -= dt * 5;
       if (this.exp <= 0) {
         this.exp = 0;
         this.isBoosting = false;
@@ -105,7 +109,7 @@ export default class Bot extends GameObject {
           Math.pow(this.nextDirectionPoint.y - this.y, 2)
       );
 
-      if (distance <= 20) {
+      if (distance <= 40) {
         this.nextDirectionPoint.x = this.game.map.randomPositionX();
         this.nextDirectionPoint.y = this.game.map.randomPositionY();
       }
@@ -137,13 +141,14 @@ export default class Bot extends GameObject {
 
     const nearOrb = this.checkTargetAreaCollision(this.game.orbs);
     if (nearOrb) return nearOrb;
+
+    return null
   }
 
   // check if the bot is in the camera area to play a sound
   inCamera() {
     const x = this.x;
     const y = this.y;
-    console.log({ x, y, cx: this.game.camera.x, cy: this.game.camera.y });
     if (
       x < this.game.camera.x + this.game.camera.width &&
       x > this.game.camera.x &&
@@ -190,6 +195,14 @@ export default class Bot extends GameObject {
             new DeathAnimation(enemy.x, enemy.y, this.game)
           );
           this.game.player.isActive = false;
+          this.game.endKills.innerText = this.game.player.kills;
+          this.game.endExp.innerText = Math.round(this.game.player.totalExp); 
+
+          if(this.game.player.kills > this.game.save.kills) this.game.save.kills = this.game.player.kills;
+          if(this.game.player.totalExp > this.game.save.exp) this.game.save.exp = this.game.player.totalExp;
+          localStorage.setItem("save", JSON.stringify(this.game.save));
+          console.log(this.game.save)
+
           setTimeout(() => {
             this.game.playAgainModal.classList.add("active");
           }, 2000);
@@ -225,7 +238,7 @@ export default class Bot extends GameObject {
       }
       this.exp -= this.expToNextLevel;
       this.level += 1;
-      this.expToNextLevel *= 2;
+      this.expToNextLevel *= 1.5;
       this.baseSpeed += 25;
 
       if (this.level >= this.maxLevel) {
@@ -268,20 +281,6 @@ export default class Bot extends GameObject {
     const target = this.findTargetToChase();
     this.target = target ?? null;
 
-    if (this.target) {
-      // check if target still exists and is still alive searching by game.bots
-      const target = [
-        ...(this.game.player.isActive ? [this.game.player] : []),
-        ...this.game.bots,
-        ...this.game.orbs,
-      ].find((bot) => bot.id === this.target.id);
-      if (target) {
-        this.target = target;
-      } else {
-        this.target = null;
-      }
-    }
-
     if (this.target && !this.attack.isAttacking && this.target.type !== "orb") {
       const distToTarget = Math.sqrt(
         Math.pow(this.target.x - this.x, 2) +
@@ -291,7 +290,12 @@ export default class Bot extends GameObject {
       if (distToTarget <= this.attackRadius) {
         if (this.attack.waitTime === null) {
           // Set a random delay before attacking
-          this.attack.waitTime = Date.now() + Math.random() * 300 + 100; // random delay between 300ms and 400ms
+          if(this.level >= 1 && this.level <= 4)
+            this.attack.waitTime = Date.now() + Math.random() * 300 + 400; // random delay between 300ms and 400ms
+          else if(this.level > 4 && this.level <= 7)
+            this.attack.waitTime = Date.now() + Math.random() * 300 + 300; // random delay between 300ms and 400ms
+          else if(this.level > 7 && this.level <= 10)
+            this.attack.waitTime = Date.now() + 300; // random delay between 300ms and 400ms
         }
 
         if (Date.now() >= this.attack.waitTime) {
@@ -390,26 +394,26 @@ export default class Bot extends GameObject {
     }
 
     // Target Area
-    ctx.beginPath();
-    ctx.arc(
-      this.x - camera.x,
-      this.y - camera.y,
-      this.targetRadius,
-      0,
-      2 * Math.PI
-    );
-    ctx.stroke();
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.x - camera.x,
+    //   this.y - camera.y,
+    //   this.targetRadius,
+    //   0,
+    //   2 * Math.PI
+    // );
+    // ctx.stroke();
 
-    // Attack Area
-    ctx.beginPath();
-    ctx.arc(
-      this.x - camera.x,
-      this.y - camera.y,
-      this.attackRadius,
-      0,
-      2 * Math.PI
-    );
-    ctx.stroke();
+    // // Attack Area
+    // ctx.beginPath();
+    // ctx.arc(
+    //   this.x - camera.x,
+    //   this.y - camera.y,
+    //   this.attackRadius,
+    //   0,
+    //   2 * Math.PI
+    // );
+    // ctx.stroke();
 
     this.pixelCanvas.drawName(
       ctx,

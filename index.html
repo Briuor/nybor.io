@@ -3,8 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Tinies.io</title>
+    <link
+      href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./index.css" />
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
   </head>
   <body oncontextmenu="return false;">
     <script type="module" src="./GameObject.js"></script>
@@ -47,32 +52,81 @@
           </li>
         </ul>
       </div>
+      <div
+        id="kills-wrapper"
+        style="position: absolute; top: 20px; left: 260px"
+      >
+        <img width="40" src="/images/killsicon.png" />
+        <span id="kills" style="font-size: 1.5em">0</span>
+      </div>
     </div>
 
-    <div id="menu">
-      <div class="game-name">
-        <img src="/images/logo.png" />
-      </div>
-      <!-- PLAY -->
-      <form id="play-form">
-        <input
-          name="name"
-          class="name"
-          id="name-play"
-          type="text"
-          pattern="[A-Za-z].{0,14}"
-          title="a-z and less than 14 characters."
-          placeholder="Player Name"
-          
-          required
-          maxlength="14"
-          autofocus
-
-        />
-        <div class="play-btn">
-          <button id="play" type="button">Play</button>
+    <div id="menu" >
+      <div>
+        <div class="game-name">
+          <img width="120px" src="/images/logo2.png" style="margin-right: 10px" />
+          <img src="/images/logo.png" />
         </div>
-      </form>
+        <!-- PLAY -->
+        <form id="play-form">
+          <div class="nes-field">
+            <label for="name-play">Your name</label>
+            <input
+              name="name"
+              class="nes-input is-dark name"
+              id="name-play"
+              type="text"
+              pattern="[A-Za-z].{0,14}"
+              title="a-z and less than 14 characters."
+              placeholder="Unammed"
+              required
+              maxlength="14"
+              autofocus
+            />
+          </div>
+          <div class="play-btn">
+            <button class="nes-btn is-dark is-disabled" id="play" type="button" disabled>
+              <img id="loading" width="50px" src="/images/loading.svg" style="margin-top: -5px"  />
+            </button>
+          </div>
+        </form>
+        
+      </div>
+      <div style="display: flex; justify-content: center; margin-top: 20px;">
+        <div class="nes-container is-dark with-title" style="margin-left: 20px; font-size: 12px">
+          <p class="title">How to Play</p>
+          <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <img src="/images/mouseleft.png" width="50" style="margin-right: 15px; " />
+            <span>Move the mouse to direct<br /> the character</span> 
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <img src="/images/mousel.png" width="50" style="margin-right: 15px;" />
+            <span>Left click the mouse to attack</span> 
+          </div>
+          <div style="display: flex; align-items: center;">
+            <img src="/images/mouseright.png" width="50" style="margin-right: 15px;" />
+            <span>Right click the mouse to run</span> 
+          </div>
+        </div>
+
+      <div class="nes-container is-dark with-title">
+        <p class="title">Personal Record</p>
+        <p><div style="margin-top: 25px; ">
+          <img src="/images/killsicon.png" width="40" style="margin-right: 15px;" /><span
+            id="kills-record"
+          >0</span> kills
+
+         
+        </div>
+        <div style="margin-top: 15px; ">
+          <img src="/images/orbicon.png" width="40" style="margin-right: 15px;" /><span
+            id="exp-record"
+          >0</span> exp
+        </div>
+        </p>
+      </div>
+    </div>
+      
     </div>
 
     <div id="play-again-modal">
@@ -82,9 +136,20 @@
           <img src="/images/logo.png" />
         </div>
         <form id="play-again-form">
-          <p id="kills"></p>
+          <div style="margin-top: 25px; margin-bottom: 15px">
+            <img src="/images/killsicon.png" width="40" style="margin-right: 15px;" />
+            <span
+              id="end-kills"
+            >0</span> kills
+          </div>
+          <div>
+            <img src="/images/orbicon.png" width="40" style="margin-right: 10px;" />
+            <span id="end-exp">0</span> exp
+          </div>
           <div class="play-btn">
-            <button id="play-again" type="submit">Play Again</button>
+            <button id="play-again" class="nes-btn is-dark" type="submit">
+              Play Again
+            </button>
           </div>
         </form>
       </div>

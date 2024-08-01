@@ -7,6 +7,83 @@ const $canvas = document.getElementById("canvas");
 const $leaderboardWrapper = document.getElementById("leaderboard-wrapper");
 const $menu = document.getElementById("menu");
 const $expBarContainer = document.getElementById("expBarContainer");
+const $nameInput = document.getElementById("name-play");
+const $killsCounter = document.getElementById("kills-wrapper");
+
+const save = JSON.parse(localStorage.getItem("save"));
+document.getElementById("kills-record").innerText = save?.kills || 0;
+document.getElementById("exp-record").innerText = Math.round(save?.exp) || 0;
+const $loading = document.getElementById('loading');
+
+const deathAudio = new Howl({
+  src: ['audio/death.wav']
+})
+const attackAudio = new Howl({
+  src: ['audio/attack.wav']
+})
+const levelUpAudio = new Howl({
+  src: ['audio/levelup.wav']
+})
+const getOrbAudio = new Howl({
+  src: ['audio/getorb.mp3']
+})
+
+var battleAudio = new Howl({
+  src: ['audio/battle.mp3'],
+  loop: true,
+});
+
+const sounds = {
+  "deathAudio": deathAudio,
+  "attackAudio": attackAudio,
+  "levelUpAudio": levelUpAudio,
+  "getOrbAudio": getOrbAudio,
+  "battleAudio": battleAudio 
+}
+const loadSound = (sound) => {
+  return new Promise((resolve, reject) => {
+    sound.once('load', function(){
+      resolve();
+    });
+  })
+}
+
+const canPlay = () => {
+  $play.disabled = false;
+  $play.classList.remove("is-disabled");
+  $play.innerText = "Play";
+  $loading.style.display = 'none';
+}
+
+const loader = new Loader();
+
+Promise.all([
+  loader.loadImage("human", "images/levels/human.png"),
+  loader.loadImage("viking", "images/levels/viking.png"),
+  loader.loadImage("rogue", "images/levels/rogue.png"),
+  loader.loadImage("bard", "images/levels/bard.png"),
+  loader.loadImage("soldier", "images/levels/soldier.png"),
+  loader.loadImage("mage", "images/levels/mage.png"),
+  loader.loadImage("ninja", "images/levels/ninja.png"),
+  loader.loadImage("samurai", "images/levels/samurai.png"),
+  loader.loadImage("soldierarmor", "images/levels/soldierarmor.png"),
+  loader.loadImage("golden", "images/levels/golden.png"),
+  loadSound(attackAudio),
+  loadSound(deathAudio),
+  loadSound(levelUpAudio),
+  loadSound(getOrbAudio),
+  loadSound(battleAudio),
+  loader.loadImage("sc", "images/sc.png"),
+  loader.loadImage("atk", "images/atk.png"),
+  loader.loadImage("atkindicator", "images/atkindicator.png"),
+  loader.loadImage("tileset", "images/tileset.png"),
+  loader.loadImage("front", "images/front.png"),
+  loader.loadImage("back", "images/back.png"),
+  loader.loadImage("heart", "images/heart.png"),
+  loader.loadImage("death", "images/die.png"),
+]).then((res) => {
+  canPlay();
+});
 
 $play.addEventListener("click", () => {
   $game.style.display = "block";
@@ -14,38 +91,28 @@ $play.addEventListener("click", () => {
   $leaderboardWrapper.style.display = "block";
   $canvas.style.display = "block";
   $expBarContainer.style.display = "block";
+  $killsCounter.style.display = "block";
 
-  const loader = new Loader();
 
-  Promise.all([
-    loader.loadImage("level1", "images/level1.png"),
-    loader.loadImage("level2", "images/level2.png"),
-    loader.loadImage("level3", "images/level3.png"),
-    loader.loadImage("level4", "images/level4.png"),
-    loader.loadImage("level5", "images/level5.png"),
-    loader.loadImage("sc", "images/sc.png"),
-    loader.loadImage("atk", "images/atk.png"),
-    loader.loadImage("atkindicator", "images/atkindicator.png"),
-    loader.loadImage("tileset", "images/tileset.png"),
-    loader.loadImage("front", "images/front.png"),
-    loader.loadImage("back", "images/back.png"),
-    loader.loadImage("heart", "images/heart.png"),
-    loader.loadImage("death", "images/die.png"),
-  ]).then((res) => {
-    const game = new Game(loader);
+    const game = new Game(loader, sounds);
     game.player.levels = [
-      { image: loader.getImage("level1"), width: 60, height: 72},
-      { image: loader.getImage("level2"), width: 60, height: 72 },
-      { image: loader.getImage("level3"), width: 60, height: 72 },
-      { image: loader.getImage("level4"), width: 60, height: 72 },
-      { image: loader.getImage("level5"), width: 69, height: 84 },
+      { image: loader.getImage("human"), width: 60, height: 72 },
+      { image: loader.getImage("viking"), width: 60, height: 72 },
+      { image: loader.getImage("rogue"), width: 60, height: 72 },
+      { image: loader.getImage("bard"), width: 63, height: 72 },
+      { image: loader.getImage("soldier"), width: 60, height: 72 },
+      { image: loader.getImage("mage"), width: 63, height: 78 },
+      { image: loader.getImage("ninja"), width: 60, height: 72 },
+      { image: loader.getImage("samurai"), width: 66, height: 72 },
+      { image: loader.getImage("soldierarmor"), width: 69, height: 84 },
+      { image: loader.getImage("golden"), width: 69, height: 82 },
     ];
     game.player.swordImage = loader.getImage("sc");
+    game.player.name = $nameInput.value || "Unammed";
     game.player.attackImage = loader.getImage("atk");
     game.player.evolution.frontImage = loader.getImage("front");
     game.player.evolution.backImage = loader.getImage("back");
     game.player.atkindicatorImage = loader.getImage("atkindicator");
     game.map.tilesetImage = loader.getImage("tileset");
     game.start();
-  });
 });
