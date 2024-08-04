@@ -24,9 +24,9 @@ export default class Bot extends GameObject {
       animation: false,
       angle: 0,
     };
-    this.targetRadius = Math.random() * 500 + 250;
-    this.attackRadius = Math.random() * 170 + 150; // 170 is ok
-    this.attackRange = 65;
+    this.targetRadius = Math.random() * 500 + 300;
+    this.attackRadius = Math.random() * 170 + 230; // 170 is ok
+    this.attackRange = 80;
     this.nextDirectionPoint = {
       x: this.game.map.randomPositionX(),
       y: this.game.map.randomPositionY(),
@@ -70,13 +70,18 @@ export default class Bot extends GameObject {
 
   move(dt) {
     let currentSpeed = this.isBoosting ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
-    if (this.isBoosting) {
-      this.exp -= dt * 5; // Consume 10 exp per second during boost
-      this.totalExp -= dt * 5;
+    if (this.isBoosting && this.level !== this.maxLevel) {
+      this.exp -= dt * 3; // Consume 10 exp per second during boost
+      this.totalExp -= dt * 3;
       if (this.exp <= 0) {
         this.exp = 0;
         this.isBoosting = false;
       }
+    }
+
+    if (this.exp <= 0 && this.level === 1) {
+      this.exp = 0;
+      this.totalExp  = 0;
     }
 
     if (this.target) {
@@ -186,7 +191,7 @@ export default class Bot extends GameObject {
 
       if (dist <= this.attackRange + enemy.radius) {
         this.kills += 1;
-        this.increaseExp(Math.floor(enemy.exp > 30 ? enemy.exp / 3 : 10));
+        this.increaseExp(enemy.level*20);
         if (enemy.id === this.game.player.id) {
           if (this.inCamera()) {
             this.game.deathAudio.play();
@@ -201,7 +206,6 @@ export default class Bot extends GameObject {
           if(this.game.player.kills > this.game.save.kills) this.game.save.kills = this.game.player.kills;
           if(this.game.player.totalExp > this.game.save.exp) this.game.save.exp = this.game.player.totalExp;
           localStorage.setItem("save", JSON.stringify(this.game.save));
-          console.log(this.game.save)
 
           setTimeout(() => {
             this.game.playAgainModal.classList.add("active");
@@ -273,7 +277,7 @@ export default class Bot extends GameObject {
         Math.abs(this.x - orb.x) < this.radius &&
         Math.abs(this.y - orb.y) < this.radius
       ) {
-        this.increaseExp(orb.exp);
+        this.increaseExp(this.level === 1 ? orb.exp*this.level : orb.exp*this.level/2);
         this.game.orbs = this.game.orbs.filter((o) => o !== orb);
       }
     }
@@ -291,11 +295,11 @@ export default class Bot extends GameObject {
         if (this.attack.waitTime === null) {
           // Set a random delay before attacking
           if(this.level >= 1 && this.level <= 4)
-            this.attack.waitTime = Date.now() + Math.random() * 300 + 400; // random delay between 300ms and 400ms
+            this.attack.waitTime = Date.now() + Math.random() * 300 + 500; // random delay between 300ms and 400ms
           else if(this.level > 4 && this.level <= 7)
-            this.attack.waitTime = Date.now() + Math.random() * 300 + 300; // random delay between 300ms and 400ms
+            this.attack.waitTime = Date.now() + Math.random() * 200 + 400; // random delay between 300ms and 400ms
           else if(this.level > 7 && this.level <= 10)
-            this.attack.waitTime = Date.now() + 300; // random delay between 300ms and 400ms
+            this.attack.waitTime = Date.now() + 400; // random delay between 300ms and 400ms
         }
 
         if (Date.now() >= this.attack.waitTime) {
@@ -321,7 +325,7 @@ export default class Bot extends GameObject {
     // ctx.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, 2 * Math.PI);
     // ctx.fill();
 
-    // attack field
+    // // attack field
     // ctx.fillStyle = "black";
     // ctx.beginPath();
     // ctx.arc(
@@ -385,15 +389,15 @@ export default class Bot extends GameObject {
         0,
         52,
         76,
-        (-52 * 3) / 2, // offset by half image width
-        (-76 * 3) / 2, // offset by half image height
-        52 * 3,
-        76 * 3
+        (-52 * 2 + 220) / 2, // offset by half image width
+        (-76 * 2) / 2, // offset by half image height
+        52 * 2,
+        76 * 2
       );
       ctx.restore();
     }
 
-    // Target Area
+    // // Target Area
     // ctx.beginPath();
     // ctx.arc(
     //   this.x - camera.x,
@@ -418,8 +422,8 @@ export default class Bot extends GameObject {
     this.pixelCanvas.drawName(
       ctx,
       this.name,
-      1.5,
-      Math.floor(this.x - camera.x - this.name.length *1.5* 2),
+      2.2,
+      Math.floor(this.x - camera.x - this.name.length *2.2* 2),
       this.y - camera.y + 40
     );
   }

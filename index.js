@@ -2,6 +2,7 @@ import Game from "./Game.js";
 import Loader from "./Loader.js";
 
 const $play = document.getElementById("play");
+const $playAgain = document.getElementById("play-again");
 const $game = document.getElementById("game");
 const $canvas = document.getElementById("canvas");
 const $leaderboardWrapper = document.getElementById("leaderboard-wrapper");
@@ -9,27 +10,62 @@ const $menu = document.getElementById("menu");
 const $expBarContainer = document.getElementById("expBarContainer");
 const $nameInput = document.getElementById("name-play");
 const $killsCounter = document.getElementById("kills-wrapper");
+const $playAgainModal = document.getElementById("play-again-modal");
+const $dontWorkOnMobileText = document.getElementById("nomobile");
+const $howToPlay = document.getElementById("howtoplay");
+const $personalRecord = document.getElementById("personalrecord");
+const $playForm = document.getElementById("play-form");
+
 
 const save = JSON.parse(localStorage.getItem("save"));
 document.getElementById("kills-record").innerText = save?.kills || 0;
 document.getElementById("exp-record").innerText = Math.round(save?.exp) || 0;
 const $loading = document.getElementById('loading');
 
+
+const detectMob = () => {
+  const toMatch = [
+      /Android/i,
+      /webOS/i,
+      /iPhone/i,
+      /iPad/i,
+      /iPod/i,
+      /BlackBerry/i,
+      /Windows Phone/i
+  ];
+
+  return toMatch.some((toMatchItem) => {
+      return navigator.userAgent.match(toMatchItem);
+  });
+}
+
+if(detectMob()) {
+  $dontWorkOnMobileText.style.display = "block";
+  $howToPlay.style.display = "none";
+  $personalRecord.style.display = "none";
+  $playForm.style.display = "none";
+}
+
 const deathAudio = new Howl({
-  src: ['audio/death.wav']
+  src: ['audio/death.wav'],
+  volume: 0.5,
 })
 const attackAudio = new Howl({
-  src: ['audio/attack.wav']
+  src: ['audio/attack.wav'],
+  volume: 0.5,
 })
 const levelUpAudio = new Howl({
-  src: ['audio/levelup.wav']
+  src: ['audio/levelup.wav'],
+  volume: 0.5,
 })
 const getOrbAudio = new Howl({
-  src: ['audio/getorb.mp3']
+  src: ['audio/getorb.mp3'],
+  volume: 0.5,
 })
 
 var battleAudio = new Howl({
   src: ['audio/battle.mp3'],
+  volume: 0.5,
   loop: true,
 });
 
@@ -85,6 +121,10 @@ Promise.all([
   canPlay();
 });
 
+
+
+let game = null;
+
 $play.addEventListener("click", () => {
   $game.style.display = "block";
   $menu.style.display = "none";
@@ -93,8 +133,7 @@ $play.addEventListener("click", () => {
   $expBarContainer.style.display = "block";
   $killsCounter.style.display = "block";
 
-
-    const game = new Game(loader, sounds);
+    game = new Game(loader, sounds);
     game.player.levels = [
       { image: loader.getImage("human"), width: 60, height: 72 },
       { image: loader.getImage("viking"), width: 60, height: 72 },
@@ -115,4 +154,16 @@ $play.addEventListener("click", () => {
     game.player.atkindicatorImage = loader.getImage("atkindicator");
     game.map.tilesetImage = loader.getImage("tileset");
     game.start();
+});
+
+$playAgain.addEventListener("click", () => {
+  $game.style.display = "none";
+  $menu.style.display = "block";
+  $leaderboardWrapper.style.display = "none";
+  $canvas.style.display = "none";
+  $expBarContainer.style.display = "none";
+  $killsCounter.style.display = "none";
+  $playAgainModal.classList.remove("active");
+  game.stop();
+  game = null;
 });

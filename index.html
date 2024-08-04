@@ -3,13 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tinies.io</title>
+    <meta name="language" content="en" />
+    <meta name="keywords" content="tinywar.io, battle, fight, sword, evolution, tinywar, io, game, multiplayer">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="description" content="Tinywar.io is an io game where you are a player in a battle with other players. The goal is to be the top 1 Rank and unlock all the 10 evolutions." />
+    <title>Tinywar.io</title>
     <link
       href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./index.css" />
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <!-- tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dark: '#212429',
+              white: 'white',
+            }
+          }
+        }
+      }
+    </script>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-F3RRJ1PPHK"></script>
     <script>
@@ -19,75 +37,84 @@
 
       gtag('config', 'G-F3RRJ1PPHK');
     </script>
-    
+
     <!-- Ad sense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7619410281566670"
     crossorigin="anonymous"></script>
   </head>
 
-  <body oncontextmenu="return false;">
+  <body oncontextmenu="return false;" class="bg-dark m-0 p-0 h-full text-white">
     <script type="module" src="./GameObject.js"></script>
     <script type="module" src="./Game.js"></script>
     <script type="module" src="./index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+
     <div id="game">
-      <canvas id="canvas" style="background: black"></canvas>
-      <div id="expBarContainer">
-        <div id="level"></div>
-        <div id="level-content"></div>
-        <div id="expBar"></div>
+
+      <canvas id="canvas" class="hidden cursor-default bg-dark"></canvas>
+
+      <div id="expBarContainer" class="fixed hidden bottom-[50px] left-[calc(50%_+_52px)] xl:scale-[1] md:scale-[0.8] scale-[0.7] transform -translate-x-1/2 w-[380px]  h-[37px] bg-[url('/images/bar.png')]">
+        <div id="level" class="select-none absolute left-[-80px] w-[83px] h-[37px] text-center z-[99] bg-[url('/images/level.png')]"></div>
+        <div id="level-content" class="absolute z-[999] text-[0.8em] left-[-22.5px] top-[10px] w-[20px] text-center"></div>
+        <div id="expBar" class="h-full w-[0%] bg-[url('/images/bar2.png')] "></div>
       </div>
-      <div id="leaderboard-wrapper">
-        <span id="leaderboard-title">Leaderboard</span>
-        <ul id="leaderboard">
-          <li>
-            <span class="leaderboard-name">1.-</span
-            ><span class="leaderboard-score">-</span>
+
+      <div id="leaderboard-wrapper" class="absolute hidden left-0 top-0 text-left select-none w-[250px] " >
+        <div id="leaderboard-title" class="text-xl md:text-2xl bg-black bg-opacity-80 pt-2 relative text-center">Leaderboard</div>
+        <ul id="leaderboard" class="text-xs md:text-sm select-none m-0 p-0 list-none">
+          <li class="text-left  px-2.5 py-1.25">
+            <span class="truncate">1.-</span
+            ><span class="float-right">-</span>
           </li>
-          <li>
-            <span class="leaderboard-name">2.-</span
-            ><span class="leaderboard-score">-</span>
+          <li class="text-left px-2.5 py-1.25">
+            <span class="truncate">2.-</span
+            ><span class="float-right">-</span>
           </li>
-          <li>
-            <span class="leaderboard-name">3.-</span
-            ><span class="leaderboard-score">-</span>
+          <li class="text-left px-2.5 py-1.25">
+            <span class="truncate">3.-</span
+            ><span class="float-right">-</span>
           </li>
-          <li>
-            <span class="leaderboard-name">4.-</span
-            ><span class="leaderboard-score">-</span>
+          <li class="text-left px-2.5 py-1.25">
+            <span class="truncate">4.-</span
+            ><span class="float-right">-</span>
           </li>
-          <li>
-            <span class="leaderboard-name">5.-</span
-            ><span class="leaderboard-score">-</span>
+          <li class="text-left px-2.5 py-1.25">
+            <span class="truncate">5.-</span
+            ><span class="float-right">-</span>
           </li>
-          <li>
-            <span class="leaderboard-name">?.-</span
-            ><span class="leaderboard-score">-</span>
+          <li class="text-left px-2.5 py-1.25">
+            <span class="truncate">?.-</span
+            ><span class="float-right">-</span>
           </li>
         </ul>
       </div>
       <div
         id="kills-wrapper"
-        style="position: absolute; top: 20px; left: 260px"
+        class="absolute hidden top-[20px] left-[250px] md:left-[260px] xl:scale-[1] md:scale-[0.8] scale-[0.7]"
       >
-        <img width="40" src="/images/killsicon.png" />
-        <span id="kills" style="font-size: 1.5em">0</span>
+        <img alt="kills icon" width="40" class="inline " src="/images/killsicon.png" />
+        <span id="kills" style="font-size: 1.5em" class="pl-1">0</span>
       </div>
     </div>
 
-    <div id="menu" >
+    <div id="menu" class="flex justify-center items-center mt-20">
       <div>
-        <div class="game-name">
-          <img width="120px" src="/images/logo2.png" style="margin-right: 10px" />
-          <img src="/images/logo.png" />
+      <div>
+        <div class="flex justify-center">
+          <img alt="logo icon"  class="md:w-[120px] w-[60px]" src="/images/logo2.png" style="margin-right: 10px" />
+          <img alt="game name logo"  class="md:w-[385px] w-[192.5px]" src="/images/logo.png" />
+        </div>
+
+        <div id="nomobile" class="hidden text-center mt-10">
+          Sorry, This game is not available for mobile yet.
         </div>
         <!-- PLAY -->
-        <form id="play-form">
+        <div id="play-form" class="w-[300px] mx-auto mt-10">
           <div class="nes-field">
             <label for="name-play">Your name</label>
             <input
               name="name"
-              class="nes-input is-dark name"
+              class="nes-input is-dark w-[300px] h-[60px]"
               id="name-play"
               type="text"
               pattern="[A-Za-z].{0,14}"
@@ -98,78 +125,82 @@
               autofocus
             />
           </div>
-          <div class="play-btn">
-            <button class="nes-btn is-dark is-disabled" id="play" type="button" disabled>
-              <img id="loading" width="50px" src="/images/loading.svg" style="margin-top: -5px"  />
+          <div class="play-btn text-center my-10">
+            <button class="nes-btn is-dark is-disabled w-[300px] h-[60px] bg-[#fee580]" id="play" type="button" disabled>
+              <img id="loading" width="50px" src="/images/loading.svg" class="inline mt-[-5px]" />
             </button>
           </div>
-        </form>
-        
+        </div>
       </div>
-      <div style="display: flex; justify-content: center; margin-top: 20px;">
-        <div class="nes-container is-dark with-title" style="margin-left: 20px; font-size: 12px">
+
+      <div id="howtoplay" style="display: flex; justify-content: center; margin-top: 20px;">
+        <div class="nes-container is-dark with-title" style="margin-left: 20px;">
           <p class="title">How to Play</p>
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <img src="/images/mouseleft.png" width="50" style="margin-right: 15px; " />
+            <img alt="mouse move icon" src="/images/mouseleft.png" width="50" style="margin-right: 15px; " />
             <span>Move the mouse to direct</span> 
           </div>
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <img src="/images/mousel.png" width="50" style="margin-right: 15px;" />
-            <span>Left click the mouse to attack</span> 
+            <img alt="mouse left click icon" src="/images/mousel.png" width="50" style="margin-right: 15px;" />
+            <span>Left click to attack</span> 
           </div>
           <div style="display: flex; align-items: center;">
-            <img src="/images/mouseright.png" width="50" style="margin-right: 15px;" />
-            <span>Right click the mouse to run</span> 
+            <img alt="mouse right click icon" src="/images/mouseright.png" width="50" style="margin-right: 15px;" />
+            <span>Hold Right click to run</span> 
           </div>
         </div>
 
-      <div class="nes-container is-dark with-title">
+      <div id="personalrecord" class="nes-container is-dark with-title">
         <p class="title">Personal Record</p>
-        <p><div style="margin-top: 25px; ">
-          <img src="/images/killsicon.png" width="40" style="margin-right: 15px;" /><span
-            id="kills-record"
-          >0</span> kills
-
-         
+        <p>
+          <div style="display: flex; align-items: center; margin-top: 25px; ">
+            <img alt="attack icon" src="/images/killsicon.png" width="40" style="margin-right: 15px;" />
+            <span
+              id="kills-record"
+            >0</span>&nbsp;kills
+          </div>
+          <div style="display: flex; align-items: center; margin-top: 25px; ">
+            <img alt="exp icon" src="/images/orbicon.png" width="40" style="margin-right: 15px;" />
+            <span
+              id="exp-record"
+            >0</span>&nbsp;exp
+          </div>
+          </p>
         </div>
-        <div style="margin-top: 15px; ">
-          <img src="/images/orbicon.png" width="40" style="margin-right: 15px;" /><span
-            id="exp-record"
-          >0</span> exp
-        </div>
-        </p>
       </div>
-    </div>
-      
+      </div>
     </div>
 
     <div id="play-again-modal">
       <div id="backdrop"></div>
       <div id="play-again-modal-wrapper">
         <div>
-          <img src="/images/logo.png" />
+          <div class="flex">
+            <img alt="logo icon" width="60px" src="/images/logo2.png" style="margin-right: 10px" />
+            <img alt="logo image" class="w-[192.5px]" src="/images/logo.png" />
+          </div>
         </div>
-        <form id="play-again-form">
-          <div style="margin-top: 25px; margin-bottom: 15px">
-            <img src="/images/killsicon.png" width="40" style="margin-right: 15px;" />
-            <span
-              id="end-kills"
-            >0</span> kills
+        <div id="play-again-form">
+          <div class="flex my-10">
+            <div class="mr-8">
+              <img alt="attack icon" src="/images/killsicon.png" width="40" style="margin-right: 15px;" class="inline" />
+              <span
+                id="end-kills"
+              >0</span> kills
+            </div>
+            <div>
+              <img alt="exp icon" src="/images/orbicon.png" width="40" style="margin-right: 10px;" class="inline mr-1" />
+              <span id="end-exp">0</span> exp
+            </div>
           </div>
-          <div>
-            <img src="/images/orbicon.png" width="40" style="margin-right: 10px;" />
-            <span id="end-exp">0</span> exp
-          </div>
+          
           <div class="play-btn">
-            <button id="play-again" class="nes-btn is-dark" type="submit">
+            <button id="play-again" type="button" class="nes-btn is-dark" type="submit">
               Play Again
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
-    <!-- <iframe src="http://localhost:5500" width="900" height="500">
-      <p>Your browser does not support iframes.</p>
-    </iframe> -->
   </body>
 </html>

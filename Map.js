@@ -150,6 +150,38 @@ export default class Map {
     );
   }
 
+  static AREA_SIZE = 500;
+
+  getAreas() {
+    const areas = [];
+    const cols = Math.floor((this.getMapMaxWidth - Map.AREA_SIZE) / Map.AREA_SIZE);
+    const rows = Math.floor((this.getMapMaxHeight - Map.AREA_SIZE) / Map.AREA_SIZE);
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        areas.push({
+          x: col * Map.AREA_SIZE,
+          y: row * Map.AREA_SIZE,
+          width: Map.AREA_SIZE,
+          height: Map.AREA_SIZE
+        });
+      }
+    }
+
+    return areas;
+  }
+
+  isAreaEmpty(area, entities, minDistance) {
+    for (const entity of entities) {
+      const distX = Math.max(area.x - entity.x, entity.x - (area.x + area.width));
+      const distY = Math.max(area.y - entity.y, entity.y - (area.y + area.height));
+      if (distX <= minDistance && distY <= minDistance) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   isWalkable(x, y) {
     const col = Math.floor(x / Map.TILE_SIZE);
     const row = Math.floor(y / Map.TILE_SIZE);

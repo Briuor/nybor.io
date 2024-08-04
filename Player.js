@@ -19,10 +19,10 @@ export default class Player extends GameObject {
     this.health = 50;
     this.maxHealth = 50;
     this.damage = 20; // Damage dealt per attack
-    this.attackRange = 65;
+    this.attackRange = 80;
     this.impulse = { x: 0, y: 0, duration: 0 };
-    this.exp = 47;
-    this.totalExp = 47;
+    this.exp = 0;
+    this.totalExp = 0;
     this.expToNextLevel = 50;
     this.level = 1;
     this.maxLevel = 10;
@@ -113,8 +113,7 @@ export default class Player extends GameObject {
         );
         this.kills += 1;
         this.game.killsCounterEl.innerText = this.kills;
-        console.log(bot.exp)
-        this.increaseExp(Math.floor(bot.exp > 30 ? bot.exp / 2 : 10));
+        this.increaseExp(bot.level*20);
       }
     }
   }
@@ -135,12 +134,12 @@ export default class Player extends GameObject {
       this.expToNextLevel *= 1.5;
       this.baseSpeed += 25;
 
-      if (this.level >= this.maxLevel) {
-        this.exp = 0;
-        this.level = this.maxLevel;
+      
+    }
 
-        break;
-      }
+    if (this.level >= this.maxLevel) {
+      this.exp = 0;
+      this.level = this.maxLevel;
     }
   }
 
@@ -171,7 +170,7 @@ export default class Player extends GameObject {
       );
       if (dist < this.radius + orb.radius) {
         this.game.getOrbAudio.play();
-        this.increaseExp(orb.exp);
+        this.increaseExp(this.level === 1 ? orb.exp*this.level : orb.exp*this.level/2);
         this.game.orbs = this.game.orbs.filter((o) => o.id !== orb.id);
       }
     }
@@ -187,13 +186,23 @@ export default class Player extends GameObject {
   move(dt) {
     if (!this.isActive) return;
 
-    let currentSpeed = this.isBoosting && this.exp > 0 ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
-    if (this.isBoosting && this.exp > 0) {
-      this.exp -= dt * 5;
-      this.totalExp -= dt * 5;
-      if (this.exp <= 0) {
-        this.exp = 0;
+    let currentSpeed = this.isBoosting ? this.baseSpeed+this.boostedSpeed : this.baseSpeed;
+    if (this.isBoosting && this.level !== this.maxLevel) {
+      this.exp -= dt * this.level * 3;
+      this.totalExp -= dt * this.level * 3;
+      if (this.exp < 0 && this.level > 1) {
+        this.startEvolutionAnimation();
+        this.game.levelUpAudio.play();
+        this.level-=1;
+        this.expToNextLevel /= 1.5;
+        this.baseSpeed -= 25;
+        this.exp += this.expToNextLevel;
       }
+    }
+
+    if (this.exp <= 0 && this.level === 1) {
+      this.exp = 0;
+      this.totalExp  = 0;
     }
 
     const nextX = this.x + Math.cos(this.directionAngle) * currentSpeed * dt;
@@ -226,23 +235,17 @@ export default class Player extends GameObject {
     // ctx.arc(camera.width / 2, camera.height / 2, this.radius, 0, 2 * Math.PI);
     // ctx.fill();
 
-    // ctx.save();
-    // ctx.strokeStyle = "black";
-    // ctx.translate(
-    //   camera.width / 2 + Math.cos(this.directionAngle) * this.attackRange,
-    //   camera.height / 2 + Math.sin(this.directionAngle) * this.attackRange
-    // );
-    // ctx.rotate(this.directionAngle);
+ 
+    // ctx.fillStyle = "black";
     // ctx.beginPath();
     // ctx.arc(
-    //   this.attackRange/2,
-    //    this.attackRange/2,
+    //   camera.width / 2 + Math.cos(this.directionAngle) * this.attackRange,
+    //   camera.height / 2 + Math.sin(this.directionAngle) * this.attackRange,
     //   this.attackRange,
-    //   -0.5 * Math.PI,
-    //   -1.5 * Math.PI
+    //   0,
+    //   2 * Math.PI
     // );
-    // ctx.stroke();
-    // ctx.restore();
+    // ctx.fill();
 
     let col, totalFrames;
     let angle = (180 * this.directionAngle) / Math.PI;
@@ -355,7 +358,7 @@ export default class Player extends GameObject {
         0,
         52,
         76,
-        (-52 * 2 + 155) / 2, // offset by half image width
+        (-52 * 2 + this.attackRange+140) / 2, // offset by half image width
         (-76 * 2) / 2, // offset by half image height
         52 * 2,
         76 * 2
@@ -373,7 +376,7 @@ export default class Player extends GameObject {
         0,
         52,
         76,
-        (-52 * 2 + 155) / 2, // offset by half image width
+        (-52 * 2 + this.attackRange+140) / 2, // offset by half image width
         (-76 * 2) / 2, // offset by half image height
         52 * 2,
         76 * 2
@@ -400,8 +403,8 @@ export default class Player extends GameObject {
     this.pixelCanvas.drawName(
       ctx,
       this.name,
-      1.5,
-      Math.floor(camera.width / 2 - this.name.length*1.5*2),
+      2.2,
+      Math.floor(camera.width / 2 - this.name.length*2.2*2),
       Math.floor(camera.height / 2) + 40
     );
   }

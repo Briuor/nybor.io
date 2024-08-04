@@ -18,7 +18,6 @@ export default class Game {
     this.orbs = [];
     this.bots = [];
     this.player = null;
-    this.generateRandomGame();
 
     this.leaderBoardWrapper = document.getElementById("leaderboard-wrapper");
     this.leaderBoard = document.getElementById("leaderboard");
@@ -39,13 +38,13 @@ export default class Game {
     this.levelUpAudio = sounds["levelUpAudio"];
     this.getOrbAudio = sounds["getOrbAudio"];
     this.camera = new Camera(this.canvas, this);
+    this.gameLoopInterval = null;
+    this.generateRandomGame();
     
     var battleAudio = sounds["battleAudio"];
     battleAudio.play();
     this.save = JSON.parse(localStorage.getItem("save")) ?? {kills: 0, exp: 0};
   }
-
-  static EXP_TO_LEVEL_10 = 2750
 
   getExpForLevel(level) {
     let exp = 0;
@@ -158,6 +157,43 @@ export default class Game {
 
   }
 
+  spawnBot() {
+    const now = Date.now();
+    const randomLevel = this.getRandomLevel();
+    const randomExp = this.getExpForLevel(randomLevel);
+
+    if (now - this.lastSpawn >= 400) {
+      const areas = this.map.getAreas();
+      let areaFound = false;
+
+      for (const area of areas) {
+        if (this.map.isAreaEmpty(area, [...(this.player.isActive ? [this.player] : []), ...this.bots], 400)) {
+          const randomX = Math.random() * (area.width - 2 * Map.TILE_SIZE) + area.x + Map.TILE_SIZE;
+          const randomY = Math.random() * (area.height - 2 * Map.TILE_SIZE) + area.y + Map.TILE_SIZE;
+
+          this.bots.push(
+            new Bot(
+              Math.floor(Math.random() * 9999) + 1,
+              randomName(), // Assuming randomName is defined
+              randomX,
+              randomY,
+              randomExp,
+              this
+            )
+          );
+          areaFound = true;
+          break;
+        }
+      }
+
+      if (!areaFound) {
+        console.log('No suitable area found for spawning.');
+      }
+
+      this.lastSpawn = now;
+    }
+  }
+
   update() {
     let now = Date.now();
     let dt = (now - this.lastUpdate) / 1000;
@@ -168,39 +204,7 @@ export default class Game {
     // check if has any entity there
     // if not spawn
     // else don't spawn and generate another coordinate
-    if (now - this.lastSpawn >= 400) {
-      let shouldSpawn = true;
-      const randomX = this.map.randomPositionX();
-      const randomY = this.map.randomPositionY();
-
-      const entities = [...(this.player.isActive ? [this.player] : []), ...this.bots];
-
-      for(let entity of entities) {
-        const dist = Math.sqrt(
-          Math.pow(randomX - entity.x, 2) + Math.pow(randomY - entity.y, 2)
-        );
-
-        if (dist <= 400) {  
-          shouldSpawn = false;
-          break;
-        }    
-      }
-
-      if(shouldSpawn) {
-        this.bots.push(
-          new Bot(
-            Math.floor(Math.random() * 9999) + 1,
-            randomName(),
-            randomX,
-            randomY,
-            0,
-            this
-          )
-        );
-      }
-
-      this.lastSpawn = now;
-    }
+    this.spawnBot()
 
     // spawn bots every 5 seconds
     if (now - this.lastSpawnOrbs >= 100) {
@@ -274,6 +278,10 @@ export default class Game {
 
   start() {
     this.lastUpdate = Date.now();
-    setInterval(this.run.bind(this), 1000 / 60);
+    this.gameLoopInterval = setInterval(this.run.bind(this), 1000 / 60);
+  }
+
+  stop() {
+    clearInterval(this.gameLoopInterval);
   }
 }
