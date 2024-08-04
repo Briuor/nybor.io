@@ -203,10 +203,6 @@ export default class Bot extends GameObject {
           this.game.endKills.innerText = this.game.player.kills;
           this.game.endExp.innerText = Math.round(this.game.player.totalExp); 
 
-          if(this.game.player.kills > this.game.save.kills) this.game.save.kills = this.game.player.kills;
-          if(this.game.player.totalExp > this.game.save.exp) this.game.save.exp = this.game.player.totalExp;
-          localStorage.setItem("save", JSON.stringify(this.game.save));
-
           setTimeout(() => {
             this.game.playAgainModal.classList.add("active");
           }, 2000);
@@ -295,11 +291,11 @@ export default class Bot extends GameObject {
         if (this.attack.waitTime === null) {
           // Set a random delay before attacking
           if(this.level >= 1 && this.level <= 4)
-            this.attack.waitTime = Date.now() + Math.random() * 300 + 500; // random delay between 300ms and 400ms
+            this.attack.waitTime = Date.now() + Math.random() * 300 + 400; // random delay between 300ms and 400ms
           else if(this.level > 4 && this.level <= 7)
-            this.attack.waitTime = Date.now() + Math.random() * 200 + 400; // random delay between 300ms and 400ms
+            this.attack.waitTime = Date.now() + Math.random() * 200 + 350; // random delay between 300ms and 400ms
           else if(this.level > 7 && this.level <= 10)
-            this.attack.waitTime = Date.now() + 400; // random delay between 300ms and 400ms
+            this.attack.waitTime = Date.now() + 350; // random delay between 300ms and 400ms
         }
 
         if (Date.now() >= this.attack.waitTime) {

@@ -53,13 +53,13 @@
 
       <canvas id="canvas" class="hidden cursor-default bg-dark"></canvas>
 
-      <div id="expBarContainer" class="fixed hidden bottom-[50px] left-[calc(50%_+_52px)] xl:scale-[1] md:scale-[0.8] scale-[0.7] transform -translate-x-1/2 w-[380px]  h-[37px] bg-[url('/images/bar.png')]">
+      <div id="expBarContainer" class="cursor-default fixed hidden bottom-[50px] left-[calc(50%_+_52px)] xl:scale-[1] md:scale-[0.8] scale-[0.7] transform -translate-x-1/2 w-[380px]  h-[37px] bg-[url('/images/bar.png')]">
         <div id="level" class="select-none absolute left-[-80px] w-[83px] h-[37px] text-center z-[99] bg-[url('/images/level.png')]"></div>
         <div id="level-content" class="absolute z-[999] text-[0.8em] left-[-22.5px] top-[10px] w-[20px] text-center"></div>
         <div id="expBar" class="h-full w-[0%] bg-[url('/images/bar2.png')] "></div>
       </div>
 
-      <div id="leaderboard-wrapper" class="absolute hidden left-0 top-0 text-left select-none w-[250px] " >
+      <div id="leaderboard-wrapper" class="cursor-default absolute hidden left-0 top-0 text-left select-none w-[250px] " >
         <div id="leaderboard-title" class="text-xl md:text-2xl bg-black bg-opacity-80 pt-2 relative text-center">Leaderboard</div>
         <ul id="leaderboard" class="text-xs md:text-sm select-none m-0 p-0 list-none">
           <li class="text-left  px-2.5 py-1.25">
@@ -90,7 +90,7 @@
       </div>
       <div
         id="kills-wrapper"
-        class="absolute hidden top-[20px] left-[250px] md:left-[260px] xl:scale-[1] md:scale-[0.8] scale-[0.7]"
+        class="cursor-default absolute hidden top-[20px] left-[250px] md:left-[260px] xl:scale-[1] md:scale-[0.8] scale-[0.7]"
       >
         <img alt="kills icon" width="40" class="inline " src="/images/killsicon.png" />
         <span id="kills" style="font-size: 1.5em" class="pl-1">0</span>
@@ -100,9 +100,9 @@
     <div id="menu" class="flex justify-center items-center mt-20">
       <div>
       <div>
-        <div class="flex justify-center">
+        <div class="flex justify-center items-center">
           <img alt="logo icon"  class="md:w-[120px] w-[60px]" src="/images/logo2.png" style="margin-right: 10px" />
-          <img alt="game name logo"  class="md:w-[385px] w-[192.5px]" src="/images/logo.png" />
+          <img alt="game name logo" class="ml-3 md:w-[385px] w-[192.5px] md:h-[70px] h-[35px]" src="/images/logo.png" />
         </div>
 
         <div id="nomobile" class="hidden text-center mt-10">
@@ -134,7 +134,7 @@
       </div>
 
       <div id="howtoplay" style="display: flex; justify-content: center; margin-top: 20px;">
-        <div class="nes-container is-dark with-title" style="margin-left: 20px;">
+        <div class="nes-container is-dark with-title" >
           <p class="title">How to Play</p>
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
             <img alt="mouse move icon" src="/images/mouseleft.png" width="50" style="margin-right: 15px; " />
@@ -146,11 +146,11 @@
           </div>
           <div style="display: flex; align-items: center;">
             <img alt="mouse right click icon" src="/images/mouseright.png" width="50" style="margin-right: 15px;" />
-            <span>Hold Right click to run</span> 
+            <span>Hold right click to run</span> 
           </div>
         </div>
 
-      <div id="personalrecord" class="nes-container is-dark with-title">
+      <!-- <div id="personalrecord" class="nes-container is-dark with-title">
         <p class="title">Personal Record</p>
         <p>
           <div style="display: flex; align-items: center; margin-top: 25px; ">
@@ -166,7 +166,7 @@
             >0</span>&nbsp;exp
           </div>
           </p>
-        </div>
+        </div> -->
       </div>
       </div>
     </div>
@@ -175,9 +175,9 @@
       <div id="backdrop"></div>
       <div id="play-again-modal-wrapper">
         <div>
-          <div class="flex">
+          <div class="flex items-center">
             <img alt="logo icon" width="60px" src="/images/logo2.png" style="margin-right: 10px" />
-            <img alt="logo image" class="w-[192.5px]" src="/images/logo.png" />
+            <img alt="logo image" class="w-[192.5px] h-[35px]" src="/images/logo.png" />
           </div>
         </div>
         <div id="play-again-form">

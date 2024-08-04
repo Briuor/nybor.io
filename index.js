@@ -13,13 +13,7 @@ const $killsCounter = document.getElementById("kills-wrapper");
 const $playAgainModal = document.getElementById("play-again-modal");
 const $dontWorkOnMobileText = document.getElementById("nomobile");
 const $howToPlay = document.getElementById("howtoplay");
-const $personalRecord = document.getElementById("personalrecord");
 const $playForm = document.getElementById("play-form");
-
-
-const save = JSON.parse(localStorage.getItem("save"));
-document.getElementById("kills-record").innerText = save?.kills || 0;
-document.getElementById("exp-record").innerText = Math.round(save?.exp) || 0;
 const $loading = document.getElementById('loading');
 
 
@@ -42,7 +36,6 @@ const detectMob = () => {
 if(detectMob()) {
   $dontWorkOnMobileText.style.display = "block";
   $howToPlay.style.display = "none";
-  $personalRecord.style.display = "none";
   $playForm.style.display = "none";
 }
 
@@ -65,7 +58,7 @@ const getOrbAudio = new Howl({
 
 var battleAudio = new Howl({
   src: ['audio/battle.mp3'],
-  volume: 0.5,
+  volume: 0.7,
   loop: true,
 });
 
@@ -133,6 +126,8 @@ $play.addEventListener("click", () => {
   $expBarContainer.style.display = "block";
   $killsCounter.style.display = "block";
 
+  battleAudio.play()
+
     game = new Game(loader, sounds);
     game.player.levels = [
       { image: loader.getImage("human"), width: 60, height: 72 },
@@ -165,5 +160,6 @@ $playAgain.addEventListener("click", () => {
   $killsCounter.style.display = "none";
   $playAgainModal.classList.remove("active");
   game.stop();
+  battleAudio.stop();
   game = null;
 });

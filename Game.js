@@ -40,10 +40,6 @@ export default class Game {
     this.camera = new Camera(this.canvas, this);
     this.gameLoopInterval = null;
     this.generateRandomGame();
-    
-    var battleAudio = sounds["battleAudio"];
-    battleAudio.play();
-    this.save = JSON.parse(localStorage.getItem("save")) ?? {kills: 0, exp: 0};
   }
 
   getExpForLevel(level) {
