@@ -16,6 +16,19 @@ const $howToPlay = document.getElementById("howtoplay");
 const $playForm = document.getElementById("play-form");
 const $loading = document.getElementById('loading');
 
+document.addEventListener("DOMContentLoaded", () => {
+  const nameInput = document.getElementById("name-play");
+
+  nameInput.addEventListener("input", (event) => {
+    const pattern = /^[A-Za-z]{0,14}$/;
+    const value = event.target.value;
+
+    if (!pattern.test(value)) {
+      event.target.value = value.slice(0, -1); // Remove last character if it doesn't match the pattern
+    }
+  });
+});
+
 
 const detectMob = () => {
   const toMatch = [
