@@ -8,7 +8,7 @@ export default class DeathAnimation extends GameObject {
     this.animationTime = Date.now();
     this.animationDuration = 150;
     this.totalFrames = 3;
-    this.hideTime = 15000; // 2 seconds before starting fade out
+    this.hideTime = 12000; // 2 seconds before starting fade out
     this.deathImage = game.loader.getImage("death");
     this.fadeOutStart = null;
     this.fadeOutDuration = 2000; // 1 second for fade out
